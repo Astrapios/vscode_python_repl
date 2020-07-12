@@ -1,0 +1,130 @@
+{
+    "name": "pythonREPL",
+    "displayName": "Python REPL",
+    "description": "Enables Convenient Python REPL Commands - open Python terminal and send selected codes, cells and files.",
+    "version": "0.1.0",
+    "publisher": "astrapios",
+    "engines": {
+        "vscode": "^1.46.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Astrapios/vscode_python_repl.git"
+    },
+    "activationEvents": [
+        "onCommand:pythonREPL.activateIPython",
+        "onCommand:pythonREPL.sendSelected",
+        "onCommand:pythonREPL.sendFileContents",
+        "onCommand:pythonREPL.sendCell",
+        "onCommand:pythonREPL.sendCellAndMove",
+        "onCommand:pythonREPL.sendAllAbove"
+    ],
+    "main": "./extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "pythonREPL.sendFileContents",
+                "title": "Python REPL: Send File Contents To IPython"
+            },
+            {
+                "command": "pythonREPL.sendSelected",
+                "title": "Python REPL: Send Selected Text (or current line) To IPython"
+            },
+            {
+                "command": "pythonREPL.activateIPython",
+                "title": "Python REPL: Activate/Initialize Python"
+            },
+            {
+                "command": "pythonREPL.sendCell",
+                "title": "Python REPL: Send Cell"
+            },
+            {
+                "command": "pythonREPL.sendCellAndMove",
+                "title": "Python REPL: Send Cell and Move to Next Cell"
+            },
+            {
+                "command": "pythonREPL.sendAllAbove",
+                "title": "Python REPL: Send Everything Above Current Cell"
+            }
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "Python REPL",
+            "properties": {
+                "pythonREPL.runInCurrentDirectory": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable/Disable Run in the same directory as the file"
+                },
+                "pythonREPL.focusActiveEditorGroup": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable/Disable run focus Active EditorGroup."
+                },
+                "pythonREPL.customTerminalCommand": {
+                    "type": "string",
+                    "description": "Custom commands to run when creating a new integrated terminal"
+                },
+                "pythonREPL.environmentActivationCommand": {
+                    "type": "string",
+                    "description": "Custom envrionment activation command"
+                },
+                "pythonREPL.pythonRunCommand": {
+                    "type": "string",
+                    "default": "ipython --pylab",
+                    "description": "Default ipython REPL with options (full path accepted)"
+                },
+                "pythonREPL.initializationTimeout": {
+                    "type": "number",
+                    "default": 3000,
+                    "description": "Milliseconds to wait for Python terminal initialization"
+                },
+                "pythonREPL.isAutoInputLine": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable/Disable auto get line in doc. use`%load`"
+                },
+                "pythonREPL.cell.blockSymbol": {
+                    "type": "string",
+                    "default": "#.*%%.*\r",
+                    "description": "Cell block indicator"
+                },
+                "pythonREPL.cell.regexFlags": {
+                    "type": "string",
+                    "default": "i",
+                    "description": "Regex flags to use for cell block search"
+                },
+                "pythonREPL.cell.copyToClipboard": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Copy the sent cell to the clipboard"
+                },
+                "pythonREPL.cell.debugNotify": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Show a notify message of the used search properties"
+                }
+            }
+        }
+    },
+
+    "scripts": {
+        "lint": "eslint .",
+        "pretest": "npm run lint",
+        "test": "node ./test/runTest.js"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.46.0",
+        "@types/glob": "^7.1.1",
+        "@types/mocha": "^7.0.2",
+        "@types/node": "^13.11.0",
+        "eslint": "^6.8.0",
+        "glob": "^7.1.6",
+        "mocha": "^7.1.2",
+        "typescript": "^3.8.3",
+        "vscode-test": "^1.3.0"
+    }
+}
