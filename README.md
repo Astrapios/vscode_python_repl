@@ -3,14 +3,14 @@ Made by [Astrapios](https://github.com/astrapios)
 
 Based on [select-by](https://github.com/rioj7/select-by) and [vscode-ipython](https://github.com/pancho111203/vscode-ipython)
 
-This extension allows simple and responsive Python REPL interface to send selected codes or codes within user defined cell (default: `'# %%'`). The extension resulted from frustration with heavy and sometimes unresponsive communication with Jupyter kernel used in default Python extension.
+This extension allows simple and responsive Python REPL (default: `ipython`) interface to send selected codes or codes within user defined cell (default: `'# %%'`). The extension resulted from frustration with heavy and sometimes unresponsive communication with Jupyter kernel used in default Python extension.
 
 ## Available Commands
-Python REPL: Send File Contents To Python ( `pythonREPL.sendFileContents` )
+Python REPL: Send File Contents ( `pythonREPL.sendFileContents` )
 
-Python REPL: Send Selected Text (or current line) To IPython ( `pythonREPL.sendSelected` )
+Python REPL: Send Selected Text (or current line) ( `pythonREPL.sendSelected` )
 
-Python REPL: Activate/Initialize Python ( `pythonREPL.activateIPython` )
+Python REPL: Activate/Initialize Python REPL ( `pythonREPL.activatePython` )
 
 Python REPL: Send Cell ( `pythonREPL.sendCell` )
 
@@ -35,7 +35,7 @@ Example `keybindings.json`:
         //this command is not needed. All other command automatically
         //activates Python REPL if it does not exist
         "key": "ctrl+c ctrl+p",
-        "command": "pythonREPL.activateIPython"
+        "command": "pythonREPL.activatePython"
     },
 
     {   //send current cell and leave cursor where it is
@@ -62,7 +62,7 @@ Example `keybindings.json`:
         "when": "vim.mode != 'Normal' && vim.mode != 'Insert"
     },
 
-    {   // send all file contetns
+    {   // send all file contents
         "key": "f5",
         "command": "pythonREPL.sendFileContents",
         "when": "editorLangId == python"
