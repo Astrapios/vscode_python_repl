@@ -1,7 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
-const pythonTerminalName = 'IPython REPL';
+const pythonTerminalName = 'Python REPL';
 
 let pythonTerminal = null;
 let textQueue = [];
@@ -17,7 +17,7 @@ var isString = obj => typeof obj === 'string';
  * @param {import("vscode").TextEditor} editor
  */
 function processRegEx(editor, runAllAbove=false){
-    const config = vscode.workspace.getConfiguration('ipythonREPL').get('cell')
+    const config = vscode.workspace.getConfiguration('pythonREPL').get('cell')
     if (getProperty(config, "debugNotify", false)) {
         vscode.window.showInformationMessage(JSON.stringify(config));
     }
@@ -66,7 +66,7 @@ function processRegEx(editor, runAllAbove=false){
 };
 
 function createPythonTerminal() {
-    const configuration = vscode.workspace.getConfiguration("ipythonREPL");
+    const configuration = vscode.workspace.getConfiguration("pythonREPL");
     let pythonCommand = configuration.get("pythonRunCommand");
     let terminalCommand = getProperty(configuration, "customTerminalCommand");
     let envCommand = getProperty(configuration, "environmentActivationCommand");
@@ -169,14 +169,14 @@ function activate(context) {
             removePythonTerminal();
         }
     });
-    function activateIPython () {
+    function activatePython () {
         let send_timeout = createPythonTerminal()
         setTimeout(queueLoop, send_timeout);
-        vscode.window.showInformationMessage("Ipython REPL activated");
+        vscode.window.showInformationMessage("Python REPL activated");
     };
         
     function sendSelected(check_cwd=false) {
-        const configuration = vscode.workspace.getConfiguration("ipythonREPL");
+        const configuration = vscode.workspace.getConfiguration("pythonREPL");
         const editor = vscode.window.activeTextEditor;
         const filename = editor.document.fileName;
         let send_timeout = createPythonTerminal();
@@ -229,7 +229,7 @@ function activate(context) {
     };
 
     function sendFileContents() {
-        const configuration = vscode.workspace.getConfiguration("ipythonREPL");
+        const configuration = vscode.workspace.getConfiguration("pythonREPL");
         const editor = vscode.window.activeTextEditor;
         const filename = editor.document.fileName;
         let send_timeout = createPythonTerminal();
@@ -266,12 +266,12 @@ function activate(context) {
         vscode.commands.executeCommand('cursorUndo');
     };
 
-    context.subscriptions.push(vscode.commands.registerCommand('ipythonREPL.activateIPython', activateIPython));
-    context.subscriptions.push(vscode.commands.registerCommand('ipythonREPL.sendCell', sendCell));
-    context.subscriptions.push(vscode.commands.registerCommand('ipythonREPL.sendCellAndMove', sendCellAndMove));
-    context.subscriptions.push(vscode.commands.registerCommand('ipythonREPL.sendAllAbove', sendAllAbove));
-    context.subscriptions.push(vscode.commands.registerCommand('ipythonREPL.sendSelected', sendSelected));
-    context.subscriptions.push(vscode.commands.registerCommand('ipythonREPL.sendFileContents', sendFileContents));
+    context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.activatePython', activatePython));
+    context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.sendCell', sendCell));
+    context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.sendCellAndMove', sendCellAndMove));
+    context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.sendAllAbove', sendAllAbove));
+    context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.sendSelected', sendSelected));
+    context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.sendFileContents', sendFileContents));
 }
 
 exports.activate = activate;
