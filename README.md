@@ -6,29 +6,37 @@ Based on [select-by](https://github.com/rioj7/select-by) and [vscode-ipython](ht
 This extension allows simple and responsive Python REPL (default: `ipython`) interface to send selected codes or codes within user defined cell (default: `'# %%'`). The extension resulted from frustration with heavy and sometimes unresponsive communication with Jupyter kernel used in default Python extension.
 
 ## Available Commands
+Python REPL: Activate/Initialize Python REPL ( `pythonREPL.activatePython` )
+- Initialize Python REPL. Python REPL should be automatically initialized from other commands if it does not already exist
+
 Python REPL: Send File Contents ( `pythonREPL.sendFileContents` )
+- Send and run full file contents in Python REPL 
 
 Python REPL: Send Selected Text (or current line) ( `pythonREPL.sendSelected` )
-
-Python REPL: Activate/Initialize Python REPL ( `pythonREPL.activatePython` )
+- Send and run selected code in Python REPL 
 
 Python REPL: Send Cell ( `pythonREPL.sendCell` )
+- Send and run current Python cell in Python REPL. Cursor position is unmodified.
 
 Python REPL: Send Cell and Move to Next Cell ( `pythonREPL.sendCellAndMove` )
+- Send and run current Python cell in Python REPL. Then, the cursor is moved to the next cell.
 
 Python REPL: Send Everything Above Current Cell ( `pythonREPL.sendAllAbove` )
+- Send and run everything above current cell in Python REPL
 
 ## Setup Guide
-Example `settings.json`:
+All Python REPL settings can be accessed from `Extension Settings` page.
+
+Example custom `settings.json`:
 ```json
 "pythonREPL.customTerminalCommand": "C:\\Users\\ryuj\\Miniconda3\\Scripts\\activate", //this is custom setup for setting correct environment on my machine
 "pythonREPL.environmentActivationCommand": "conda activate base", //set a custom environment
 "pythonREPL.pythonRunCommand": "ipython --pylab", //these are default values
 "pythonREPL.cell.blockSymbol": "#.*%%.*\r", //these are default values
 ```
-All of the above settings are optional. The `pythonREPL.customTerminalCommand` and `pythonREPL.environmentActivationCommand` is for an advanced user who wants to circumvent a bug on Windows using default Microsoft Python extension. When using `cmd.exe` as `terminal.integrated.shell.windows` along with `conda` Python envrionment, creation of new integrated terminal steals a cursor focus. Changing `"python.terminal.activateEnvironment": false`, fixes the focus problem but requires user to set the environment manually. The two options are for such cases but can be ignored if initial terminal focus is not bothersome.
+The `pythonREPL.customTerminalCommand` and `pythonREPL.environmentActivationCommand` is for an advanced user who wants to circumvent a bug on Windows using default Microsoft Python extension. When using `cmd.exe` as `terminal.integrated.shell.windows` along with `conda` Python envrionment, creation of new integrated terminal steals a cursor focus. Changing `"python.terminal.activateEnvironment": false`, fixes the focus problem but requires user to set the environment manually. The two options are for such cases but can be ignored if initial terminal focus is not bothersome.
 
-Example `keybindings.json`:
+Example custom `keybindings.json`:
 ```json
 "keybindings": [
     {   //activate Python REPL without sending any code
