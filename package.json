@@ -2,7 +2,7 @@
     "name": "pythonREPL",
     "displayName": "Python REPL",
     "description": "Enables Convenient Python REPL Commands - open Python terminal and send selected codes, cells and files.",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "publisher": "astrapios",
     "engines": {
         "vscode": "^1.46.0"
@@ -15,7 +15,7 @@
         "url": "https://github.com/Astrapios/vscode_python_repl.git"
     },
     "activationEvents": [
-        "onCommand:pythonREPL.activateIPython",
+        "onCommand:pythonREPL.activatePython",
         "onCommand:pythonREPL.sendSelected",
         "onCommand:pythonREPL.sendFileContents",
         "onCommand:pythonREPL.sendCell",
@@ -27,14 +27,14 @@
         "commands": [
             {
                 "command": "pythonREPL.sendFileContents",
-                "title": "Python REPL: Send File Contents To IPython"
+                "title": "Python REPL: Send File Contents"
             },
             {
                 "command": "pythonREPL.sendSelected",
-                "title": "Python REPL: Send Selected Text (or current line) To IPython"
+                "title": "Python REPL: Send Selected Text (or current line)"
             },
             {
-                "command": "pythonREPL.activateIPython",
+                "command": "pythonREPL.activatePython",
                 "title": "Python REPL: Activate/Initialize Python"
             },
             {
@@ -75,7 +75,7 @@
                 "pythonREPL.pythonRunCommand": {
                     "type": "string",
                     "default": "ipython --pylab",
-                    "description": "Default ipython REPL with options (full path accepted)"
+                    "description": "Default Python REPL with options (full path accepted)"
                 },
                 "pythonREPL.initializationTimeout": {
                     "type": "number",
