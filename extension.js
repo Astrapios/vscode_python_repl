@@ -24,6 +24,10 @@ function processRegEx(editor, runAllAbove=false){
     // let config = getConfigRegEx();
     // if (config === undefined) { return; }
     var docText = editor.document.getText();
+    var lineEnd = editor.document.positionAt(docText.length);
+    lineEnd._character = 0;
+    var lineEndOffset = editor.document.offsetAt(lineEnd);
+
     // position of cursor is "start" of selection
     var offsetCursor = editor.document.offsetAt(editor.selection.start);
     var selectStart = offsetCursor;
@@ -42,7 +46,7 @@ function processRegEx(editor, runAllAbove=false){
             regex.lastIndex = 0;
             var result;
             while ((result = regex.exec(docText)) != null) {
-                if (result.index >= offsetCursor) break;
+                if (result.index >= offsetCursor || result.index >= lineEndOffset) break;
                 selectStart = regex.lastIndex;
             }
         }
@@ -53,12 +57,32 @@ function processRegEx(editor, runAllAbove=false){
             regex.lastIndex = selectEnd;
             selectEnd = docText.length;
             var result;
-            if ((result = regex.exec(docText)) != null) {
-                selectEnd = result.index;
-                lineAdjust = 1; // adjust the line by 1 to get rid of regex comment line
+            while ((result = regex.exec(docText)) != null) {
+                if (result.index >= offsetCursor) {
+                    selectEnd = result.index;
+                    lineAdjust = 1; // adjust the line by 1 to get rid of regex comment line
+                    break;
+                }
             }
         }
     }
+
+    // case for cursor at the beginning block symbol. In this case, if not at the last line of the script,
+    // cell below the cursor is executed
+    if ((offsetCursor === selectEnd && offsetCursor < lineEndOffset) || selectStart === selectEnd) {
+        selectStart = offsetCursor;
+        selectEnd = selectStart + 1;
+        regex = new RegExp(regex, flags);
+        regex.lastIndex = selectEnd;
+        var result;
+        while ((result = regex.exec(docText)) != null) {
+            if (result.index >= offsetCursor + 1) {
+                selectEnd = result.index;
+                lineAdjust = 1; // adjust the line by 1 to get rid of regex comment line
+                break;
+            }
+        }
+    } 
 
     if (getProperty(config, "copyToClipboard", false)) {
         vscode.env.clipboard.writeText(docText.substring(selectStart, selectEnd)).then((v)=>v, (v)=>null);
@@ -163,7 +187,7 @@ function activate(context) {
         vscode.window.showInformationMessage("Python REPL activated");
     };
         
-    function sendSelected(startLine, endLine, check_cwd=false) {
+    function sendLines(startLine, endLine, check_cwd=false) {
         const configuration = vscode.workspace.getConfiguration("pythonREPL");
         const direct_send = configuration.get('sendTextDirectly');
         const editor = vscode.window.activeTextEditor;
@@ -179,7 +203,7 @@ function activate(context) {
         if (direct_send) {
             var docText = editor.document.getText();
             let start_range = editor.document.lineAt(startLine).range.start;
-            let end_range = editor.document.lineAt(endLine).range.start;
+            let end_range = editor.document.lineAt(endLine).range.end;
             start_range = editor.document.offsetAt(start_range);
             end_range = editor.document.offsetAt(end_range);
             command = docText.substring(start_range, end_range);
@@ -215,7 +239,17 @@ function activate(context) {
     function sendCell () {
         const editor = vscode.window.activeTextEditor;
         let [sL, eL] = processRegEx(editor);
-        sendSelected(sL, eL, true);
+        sendLines(sL, eL, true);
+    };
+
+    function sendSelected () {
+        const editor = vscode.window.activeTextEditor;
+        var selectStart = editor.document.offsetAt(editor.selection.start);
+        var selectEnd = editor.document.offsetAt(editor.selection.end);
+        let sL = editor.document.positionAt(selectStart).line;
+        let eL = editor.document.positionAt(selectEnd).line;
+
+        sendLines(sL, eL, true);
     };
 
     function sendCellAndMove () {
@@ -224,11 +258,11 @@ function activate(context) {
         var range;
 
         let [sL, eL] = processRegEx(editor);
-        sendSelected(sL, eL, true);
+        sendLines(sL, eL, true);
 
         // move to next cell only if current cell is not the last cell
         var lineEnd = editor.document.positionAt(docText.length).line;
-        if (eL !== lineEnd){
+        if (eL < lineEnd - 2){
             range = editor.document.lineAt(eL+2).range;
             editor.selections = [new vscode.Selection(range.start, range.start)];
             editor.revealRange(range);
@@ -238,7 +272,7 @@ function activate(context) {
     function sendAllAbove () {
         const editor = vscode.window.activeTextEditor;
         let [sL, eL] = processRegEx(editor, true);
-        sendSelected(sL, eL-1, true);
+        sendLines(sL, eL-1, true);
     };
 
     context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.activatePython', activatePython));
