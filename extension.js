@@ -65,24 +65,24 @@ function processRegEx(editor, runAllAbove=false){
                 }
             }
         }
-    }
 
-    // case for cursor at the beginning block symbol. In this case, if not at the last line of the script,
-    // cell below the cursor is executed
-    if ((offsetCursor === selectEnd && offsetCursor < lineEndOffset) || selectStart === selectEnd) {
-        selectStart = offsetCursor;
-        selectEnd = selectStart + 1;
-        regex = new RegExp(regex, flags);
-        regex.lastIndex = selectEnd;
-        var result;
-        while ((result = regex.exec(docText)) != null) {
-            if (result.index >= offsetCursor + 1) {
-                selectEnd = result.index;
-                lineAdjust = 1; // adjust the line by 1 to get rid of regex comment line
-                break;
+        // case for cursor at the beginning block symbol. In this case, if not at the last line of the script,
+        // cell below the cursor is executed
+        if ((offsetCursor === selectEnd && offsetCursor < lineEndOffset) || selectStart === selectEnd) {
+            selectStart = offsetCursor;
+            selectEnd = docText.length;
+            regex = new RegExp(regex, flags);
+            regex.lastIndex = selectStart;
+            var result;
+            while ((result = regex.exec(docText)) != null) {
+                if (result.index >= offsetCursor + 1) {
+                    selectEnd = result.index;
+                    lineAdjust = 1; // adjust the line by 1 to get rid of regex comment line
+                    break;
+                }
             }
-        }
-    } 
+        } 
+    }
 
     if (getProperty(config, "copyToClipboard", false)) {
         vscode.env.clipboard.writeText(docText.substring(selectStart, selectEnd)).then((v)=>v, (v)=>null);
