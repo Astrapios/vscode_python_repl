@@ -2,10 +2,10 @@
     "name": "pythonREPL",
     "displayName": "Python REPL",
     "description": "Enables Convenient Python REPL Commands - open Python terminal and send selected codes, cells and files.",
-    "version": "0.1.2",
+    "version": "0.2.0",
     "publisher": "astrapios",
     "engines": {
-        "vscode": "^1.46.0"
+        "vscode": "^1.52.1"
     },
     "categories": [
         "Other"
@@ -59,6 +59,11 @@
                     "default": true,
                     "description": "Enable/Disable Run in the same directory as the file"
                 },
+                "pythonREPL.sendTextDirectly": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable/Disable direct text send"
+                },
                 "pythonREPL.focusActiveEditorGroup": {
                     "type": "boolean",
                     "default": true,
@@ -89,7 +94,7 @@
                 },
                 "pythonREPL.cell.blockSymbol": {
                     "type": "string",
-                    "default": "#.*%%.*\r",
+                    "default": "#.*%%.*",
                     "description": "Cell block indicator"
                 },
                 "pythonREPL.cell.regexFlags": {

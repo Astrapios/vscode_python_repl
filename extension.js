@@ -29,40 +29,45 @@ function processRegEx(editor, runAllAbove=false){
     var selectStart = offsetCursor;
     var flags = getProperty(config, "regexFlags", "") + "g";
     var regex;
+    var lineAdjust = 0;
     regex = getProperty(config, "blockSymbol");
-    if (regex && isString(regex)) {
-        regex = new RegExp(regex, flags);
-        selectStart = 0;
-        regex.lastIndex = 0;
-        var result;
-        while ((result=regex.exec(docText)) != null) {
-        if (result.index >= offsetCursor) break;
-        selectStart = regex.lastIndex;
-        }
-    }
-    var selectEnd = editor.document.offsetAt(editor.selection.end);
-    regex = getProperty(config, "blockSymbol");
-    if (regex && isString(regex)) {
-        regex = new RegExp(regex, flags);
-        regex.lastIndex = selectEnd;
-        selectEnd = docText.length;
-        var result;
-        while ((result=regex.exec(docText)) != null) {
-        selectEnd = result.index;
-        break;
-        }
-    }
 
     if (runAllAbove) {
-        selectEnd = selectStart;
         selectStart = 0;
+        selectEnd = offsetCursor;
+    } else {
+        if (regex && isString(regex)) {
+            regex = new RegExp(regex, flags);
+            selectStart = 0;
+            regex.lastIndex = 0;
+            var result;
+            while ((result = regex.exec(docText)) != null) {
+                if (result.index >= offsetCursor) break;
+                selectStart = regex.lastIndex;
+            }
+        }
+        var selectEnd = editor.document.offsetAt(editor.selection.end);
+        regex = getProperty(config, "blockSymbol");
+        if (regex && isString(regex)) {
+            regex = new RegExp(regex, flags);
+            regex.lastIndex = selectEnd;
+            selectEnd = docText.length;
+            var result;
+            if ((result = regex.exec(docText)) != null) {
+                selectEnd = result.index;
+                lineAdjust = 1; // adjust the line by 1 to get rid of regex comment line
+            }
+        }
     }
 
     if (getProperty(config, "copyToClipboard", false)) {
         vscode.env.clipboard.writeText(docText.substring(selectStart, selectEnd)).then((v)=>v, (v)=>null);
     }
 
-    editor.selection = new vscode.Selection(editor.document.positionAt(selectStart), editor.document.positionAt(selectEnd));
+    selectStart = editor.document.positionAt(selectStart).line;
+    selectEnd = editor.document.positionAt(selectEnd).line - lineAdjust;
+
+    return [selectStart, selectEnd]
 };
 
 function createPythonTerminal() {
@@ -119,23 +124,6 @@ function sendQueuedText(text, waitTime = 50) {
     waitsQueue.push(waitTime);
 }
 
-function judgeCMD(CMD) {
-    let A = CMD.split('\n');
-    let istop = false;
-
-    console.log(CMD)
-    console.log(A)
-
-    if (A.length > 1) {
-        let text = A[A.length - 1]
-        console.log(text)
-        istop = RegExp(/^\s+/g).test(text)
-    }
-
-    console.log(istop)
-    return istop
-}
-
 function queueLoop() {
     if (textQueue.length > 0 && pythonTerminal !== null && pythonTerminal._queuedRequests.length === 0) {
         isrunning = true;
@@ -175,54 +163,32 @@ function activate(context) {
         vscode.window.showInformationMessage("Python REPL activated");
     };
         
-    function sendSelected(check_cwd=false) {
+    function sendSelected(startLine, endLine, check_cwd=false) {
         const configuration = vscode.workspace.getConfiguration("pythonREPL");
+        const direct_send = configuration.get('sendTextDirectly');
         const editor = vscode.window.activeTextEditor;
         const filename = editor.document.fileName;
         let send_timeout = createPythonTerminal();
+        var command;
 
         // set pwd to editor file path
         if (filename !== currentFilename && check_cwd) {
             updateFilename(filename, configuration.get('runInCurrentDirectory'));
         }
 
-        // get selection & get snippet
-        const selection = (editor !== undefined) ? editor.selection : undefined;
-        const isSelection = (editor === undefined || selection === undefined || selection.isEmpty) ? false : true
-        const isAutoInputLine = configuration.get("isAutoInputLine");
-        let command;
-
-        if (isSelection === false || isAutoInputLine) {  //defalt: true
-            let startLine, endLine;
-            if (editor.selection.isEmpty) {
-                startLine = editor.selection.active.line + 1
-                endLine = startLine;
-            } else {
-                startLine = editor.selection.start.line + 1;
-                endLine = editor.selection.end.line + 1;
-            };
-            command = `\n%load -r ${startLine}-${endLine} ${filename}\n`;
-        };
-
-        if (isSelection) {
-            const selectedText = editor.document.getText(selection);
-            const command_text = selectedText.toString();
-
-            if (isAutoInputLine) {
-                sendQueuedText(command, 500);
-                sendQueuedText('\n');
-
-                if (judgeCMD(command_text)) {
-                    console.log('')
-                    sendQueuedText('\n', 300);
-                };
-            } else {
-                sendQueuedText(command_text, 500);
-            };
+        if (direct_send) {
+            var docText = editor.document.getText();
+            let start_range = editor.document.lineAt(startLine+1).range.start;
+            let end_range = editor.document.lineAt(endLine+1).range.start;
+            start_range = editor.document.offsetAt(start_range);
+            end_range = editor.document.offsetAt(end_range);
+            command = docText.substring(start_range, end_range);
         } else {
-            sendQueuedText(command);
-            sendQueuedText('\n');
-        };
+            command = `\n%load -r ${startLine + 1}-${endLine + 1} ${filename}\n`;
+        }
+
+        sendQueuedText(command, 500);
+        sendQueuedText('\n');
         sendQueuedText('\n');
         pythonTerminal.show(configuration.get("focusActiveEditorGroup"));  //defalt: true
         setTimeout(queueLoop, send_timeout);
@@ -248,22 +214,31 @@ function activate(context) {
 
     function sendCell () {
         const editor = vscode.window.activeTextEditor;
-        processRegEx(editor);
-        sendSelected(true);
-        vscode.commands.executeCommand('cursorUndo');
+        let [sL, eL] = processRegEx(editor);
+        sendSelected(sL, eL, true);
     };
+
     function sendCellAndMove () {
         const editor = vscode.window.activeTextEditor;
-        processRegEx(editor);
-        sendSelected(true);
-        vscode.commands.executeCommand('cursorEnd');
+        var docText = editor.document.getText();
+        var range;
+
+        let [sL, eL] = processRegEx(editor);
+        sendSelected(sL, eL, true);
+
+        // move to next cell only if current cell is not the last cell
+        var lineEnd = editor.document.positionAt(docText.length).line;
+        if (eL !== lineEnd){
+            range = editor.document.lineAt(eL+2).range;
+            editor.selections = [new vscode.Selection(range.start, range.start)];
+            editor.revealRange(range);
+        }
     };
 
     function sendAllAbove () {
         const editor = vscode.window.activeTextEditor;
-        processRegEx(editor, true);
-        sendSelected(true);
-        vscode.commands.executeCommand('cursorUndo');
+        let [sL, eL] = processRegEx(editor, true);
+        sendSelected(sL, eL-1, true);
     };
 
     context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.activatePython', activatePython));
