@@ -178,8 +178,8 @@ function activate(context) {
 
         if (direct_send) {
             var docText = editor.document.getText();
-            let start_range = editor.document.lineAt(startLine+1).range.start;
-            let end_range = editor.document.lineAt(endLine+1).range.start;
+            let start_range = editor.document.lineAt(startLine).range.start;
+            let end_range = editor.document.lineAt(endLine).range.start;
             start_range = editor.document.offsetAt(start_range);
             end_range = editor.document.offsetAt(end_range);
             command = docText.substring(start_range, end_range);

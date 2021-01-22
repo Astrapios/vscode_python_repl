@@ -1,7 +1,7 @@
 # Python REPL
 Made by [Astrapios](https://github.com/astrapios)
 
-Based on [select-by](https://github.com/rioj7/select-by) and [vscode-ipython](https://github.com/pancho111203/vscode-ipython)
+Inspired by [select-by](https://github.com/rioj7/select-by) and [vscode-ipython](https://github.com/pancho111203/vscode-ipython)
 
 This extension allows simple and responsive Python REPL (default: `ipython`) interface to send selected codes or codes within user defined cell (default: `'# %%'`). The extension resulted from frustration with heavy and sometimes unresponsive communication with Jupyter kernel used in default Python extension.
 
@@ -35,6 +35,8 @@ Example custom `settings.json`:
 "pythonREPL.cell.blockSymbol": "#.*%%.*\r", //these are default values
 ```
 The `pythonREPL.customTerminalCommand` and `pythonREPL.environmentActivationCommand` is for an advanced user who wants to circumvent a bug on Windows using default Microsoft Python extension. When using `cmd.exe` as `terminal.integrated.shell.windows` along with `conda` Python envrionment, creation of new integrated terminal steals a cursor focus. Changing `"python.terminal.activateEnvironment": false`, fixes the focus problem but requires user to set the environment manually. The two options are for such cases but can be ignored if initial terminal focus is not bothersome.
+
+Directly sending code to terminal has issues in OS X, where instead of entire code block being sent as a whole, each line separated by new line or carriage return are executed sequencially. To circumvent this issue, `pythonREPL.sendTextDirectly` set to `false` as a default. This utilizes `%load -r` *Ipython* magic command, which allows user to send specific lines of from a *Python* script. For responsiveness, this requires users to save the script before sending code blocks. For Windows users, this option should be turned on in the settings.
 
 Example custom `keybindings.json`:
 ```json
