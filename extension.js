@@ -149,7 +149,7 @@ function sendQueuedText(text, waitTime = 50) {
 }
 
 function queueLoop() {
-    if (textQueue.length > 0 && pythonTerminal !== null && pythonTerminal._queuedRequests.length === 0) {
+    if (textQueue.length > 0 && pythonTerminal !== null) {
         isrunning = true;
         const text = textQueue.shift();
         const waitTime = waitsQueue.shift();
@@ -157,7 +157,7 @@ function queueLoop() {
         setTimeout(queueLoop, waitTime);
     } else {
         if (isrunning) {            
-            if (textQueue.length === 0 && pythonTerminal !== null && pythonTerminal._queuedRequests.length === 0) {
+            if (textQueue.length === 0 && pythonTerminal !== null) {
                 isrunning = false;
             };
         } else {
