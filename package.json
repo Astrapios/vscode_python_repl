@@ -2,7 +2,7 @@
     "name": "pythonREPL",
     "displayName": "Python REPL",
     "description": "Enables Convenient Python REPL Commands - open Python terminal and send selected codes, cells and files.",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "publisher": "astrapios",
     "engines": {
         "vscode": "^1.52.1"
