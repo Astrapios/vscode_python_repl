@@ -140,7 +140,6 @@ function updateFilename(filename, runInCurrentDirectory) {
         sendQueuedText(`os.chdir(os.path.dirname(r'${filename}'))`)
     }
     sendQueuedText('sys.path.append(os.path.dirname(__file__))', 2000)
-    sendQueuedText('\n')
 }
 
 function sendQueuedText(text, waitTime = 50) {
@@ -158,6 +157,7 @@ function queueLoop() {
     } else {
         if (isrunning) {            
             if (textQueue.length === 0 && pythonTerminal !== null) {
+                pythonTerminal.sendText('\n\r');
                 isrunning = false;
             };
         } else {
@@ -212,8 +212,6 @@ function activate(context) {
         }
 
         sendQueuedText(command, 500);
-        sendQueuedText('\n');
-        sendQueuedText('\n');
         pythonTerminal.show(configuration.get("focusActiveEditorGroup"));  //defalt: true
         setTimeout(queueLoop, send_timeout);
     };
@@ -230,8 +228,6 @@ function activate(context) {
         }
 
         sendQueuedText(`\n%load ${filename}\n`, 500);
-        sendQueuedText('\n');
-        sendQueuedText('\n');
         pythonTerminal.show(configuration.get("focusActiveEditorGroup"));
         setTimeout(queueLoop, send_timeout);
     };
