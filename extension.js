@@ -120,7 +120,6 @@ function createPythonTerminal() {
         send_timeout = configuration.get("initializationTimeout");
     }
 
-    console.log(send_timeout);
     return send_timeout
 }
 
@@ -142,7 +141,7 @@ function updateFilename(filename, runInCurrentDirectory) {
     sendQueuedText('sys.path.append(os.path.dirname(__file__))', 2000)
 }
 
-function sendQueuedText(text, waitTime = 50) {
+function sendQueuedText(text, waitTime = 10) {
     textQueue.push(text);
     waitsQueue.push(waitTime);
 }
@@ -157,16 +156,17 @@ function queueLoop() {
     } else {
         if (isrunning) {            
             if (textQueue.length === 0 && pythonTerminal !== null) {
-                pythonTerminal.sendText('\n\r');
                 isrunning = false;
+                pythonTerminal.sendText('\n', false);
             };
         } else {
             noruntimes -= 1;
             if (noruntimes < 0) {
+                pythonTerminal.sendText('\n', false);
                 return
             }; 
         };
-        setTimeout(queueLoop, 200);
+        setTimeout(queueLoop, 100);
     }
 }
 
@@ -211,7 +211,7 @@ function activate(context) {
             command = `\n%load -r ${startLine + 1}-${endLine + 1} ${filename}\n`;
         }
 
-        sendQueuedText(command, 500);
+        sendQueuedText(command, 100);
         pythonTerminal.show(configuration.get("focusActiveEditorGroup"));  //defalt: true
         setTimeout(queueLoop, send_timeout);
     };
