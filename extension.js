@@ -106,7 +106,12 @@ function createPythonTerminal() {
         textQueue = [];
         waitsQueue = [];
 
-        pythonTerminal = vscode.window.createTerminal(pythonTerminalName);
+        const terminalOptions = {
+            name: pythonTerminalName,
+            hideFromUser: true
+        };
+
+        pythonTerminal = vscode.window.createTerminal(terminalOptions);
 
         if (terminalCommand && isString(terminalCommand)){
             sendQueuedText(terminalCommand, 200);
@@ -116,7 +121,7 @@ function createPythonTerminal() {
         }
         sendQueuedText(pythonCommand, 2000);
 
-        pythonTerminal.show(configuration.get("focusActiveEditorGroup"));  //defalt: true
+        pythonTerminal.show(true);  //defalt: true
         send_timeout = configuration.get("initializationTimeout");
     }
 
@@ -157,14 +162,10 @@ function queueLoop() {
         if (isrunning) {            
             if (textQueue.length === 0 && pythonTerminal !== null) {
                 isrunning = false;
-                pythonTerminal.sendText('\n', false);
             };
         } else {
-            noruntimes -= 1;
-            if (noruntimes < 0) {
-                pythonTerminal.sendText('\n', false);
-                return
-            }; 
+            pythonTerminal.sendText('\n', false);
+            return
         };
         setTimeout(queueLoop, 100);
     }
@@ -212,7 +213,6 @@ function activate(context) {
         }
 
         sendQueuedText(command, 100);
-        pythonTerminal.show(configuration.get("focusActiveEditorGroup"));  //defalt: true
         setTimeout(queueLoop, send_timeout);
     };
 
@@ -228,7 +228,6 @@ function activate(context) {
         }
 
         sendQueuedText(`\n%load ${filename}\n`, 500);
-        pythonTerminal.show(configuration.get("focusActiveEditorGroup"));
         setTimeout(queueLoop, send_timeout);
     };
 
