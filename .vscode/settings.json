@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "C:\\Users\\ryuj\\Miniconda3\\python.exe"
+    "pythonREPL.sendTextDirectly": true,
+    "pythonREPL.environmentActivationCommand": "conda activate research"
 }

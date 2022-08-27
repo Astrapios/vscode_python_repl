@@ -2,7 +2,7 @@
     "name": "pythonREPL",
     "displayName": "Python REPL",
     "description": "Enables Convenient Python REPL Commands - open Python terminal and send selected codes, cells and files.",
-    "version": "0.2.6",
+    "version": "0.3.0",
     "publisher": "astrapios",
     "engines": {
         "vscode": "^1.52.1"
@@ -22,7 +22,7 @@
         "onCommand:pythonREPL.sendCellAndMove",
         "onCommand:pythonREPL.sendAllAbove"
     ],
-    "main": "./extension.js",
+    "main": "./out/extension.js",
     "contributes": {
         "commands": [
             {
@@ -82,10 +82,15 @@
                     "default": "ipython --pylab",
                     "description": "Default Python REPL with options (full path accepted)"
                 },
-                "pythonREPL.initializationTimeout": {
+                "pythonREPL.terminalInitTimeout": {
                     "type": "number",
-                    "default": 3000,
-                    "description": "Milliseconds to wait for Python terminal initialization"
+                    "default": 1000,
+                    "description": "Milliseconds to wait for terminal initialization"
+                },
+                "pythonREPL.pythonInitTimeout": {
+                    "type": "number",
+                    "default": 300,
+                    "description": "Milliseconds to wait for Python repl initialization"
                 },
                 "pythonREPL.isAutoInputLine": {
                     "type": "boolean",
@@ -115,21 +120,28 @@
             }
         }
     },
-
     "scripts": {
-        "lint": "eslint .",
-        "pretest": "npm run lint",
-        "test": "node ./test/runTest.js"
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "eslint src --ext ts",
+        "test": "node ./out/test/runTest.js"
     },
     "devDependencies": {
-        "@types/vscode": "^1.46.0",
-        "@types/glob": "^7.1.1",
-        "@types/mocha": "^7.0.2",
-        "@types/node": "^13.11.0",
-        "eslint": "^6.8.0",
-        "glob": "^7.1.6",
-        "mocha": "^7.1.2",
-        "typescript": "^3.8.3",
-        "vscode-test": "^1.3.0"
+        "@types/glob": "^7.2.0",
+        "@types/mocha": "^9.1.1",
+        "@types/node": "16.x",
+        "@types/vscode": "^1.70.0",
+        "@typescript-eslint/eslint-plugin": "^5.31.0",
+        "@typescript-eslint/parser": "^5.31.0",
+        "@vscode/test-electron": "^2.1.5",
+        "eslint": "^8.20.0",
+        "glob": "^8.0.3",
+        "mocha": "^10.0.0",
+        "typescript": "^4.7.4"
+    },
+    "dependencies": {
+        "timers": "^0.1.1"
     }
 }
