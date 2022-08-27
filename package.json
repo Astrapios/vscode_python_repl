@@ -5,7 +5,7 @@
     "version": "0.3.0",
     "publisher": "astrapios",
     "engines": {
-        "vscode": "^1.52.1"
+        "vscode": "^1.70.0"
     },
     "categories": [
         "Other"
