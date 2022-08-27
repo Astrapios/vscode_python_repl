@@ -17,7 +17,7 @@ let isrunning: boolean = false;
  * @param {import("vscode").TextEditor} editor
  */
 function processRegEx(editor: vscode.TextEditor, runAllAbove: boolean = false){
-    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL')
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL.cell');
     const regex = config.get("blockSymbol", "#.*%%.*");
     if (config.get("debugNotify", false)) {
         vscode.window.showInformationMessage(JSON.stringify(config));
@@ -40,28 +40,16 @@ function processRegEx(editor: vscode.TextEditor, runAllAbove: boolean = false){
     } 
     // case for cursor at the beginning block symbol. In this case, if not at the last line of the script,
     // cell below the cursor is executed
-    else if ((offsetCursor == selectEndOffset && offsetCursor < lineEndOffset) || selectStartOffset == selectEndOffset) {
-        let regexObj = new RegExp(regex, flags);
-        let result;
-        selectStartOffset = offsetCursor;
-        selectEndOffset = docText.length;
-        regexObj.lastIndex = selectStartOffset;
-        while ((result = regexObj.exec(docText)) != null) {
-            if (result.index >= offsetCursor + 1) {
-                selectEndOffset = result.index;
-                lineAdjust = 1; // adjust the line by 1 to get rid of regex comment line
-                break;
-            }
-        }
-    } 
     else {
         // find start offset
         let regexObj = new RegExp(regex, flags);
         let result;
         selectStartOffset = 0;
         regexObj.lastIndex = 0;
-        while ((result = regexObj.exec(docText)) != null) {
-            if (result.index >= offsetCursor || result.index >= lineEndOffset) break;
+        while ((result = regexObj.exec(docText)) !== null) {
+            if (result.index >= offsetCursor || result.index >= lineEndOffset) {
+                break;
+            }
             selectStartOffset = regexObj.lastIndex;
         }
         // find end offset
@@ -69,7 +57,7 @@ function processRegEx(editor: vscode.TextEditor, runAllAbove: boolean = false){
         regexObj = new RegExp(regex, flags);
         regexObj.lastIndex = selectEndOffset;
         selectEndOffset = docText.length;
-        while ((result = regexObj.exec(docText)) != null) {
+        while ((result = regexObj.exec(docText)) !== null) {
             if (result.index >= offsetCursor) {
                 selectEndOffset = result.index;
                 lineAdjust = 1; // adjust the line by 1 to get rid of regex comment line
@@ -77,17 +65,31 @@ function processRegEx(editor: vscode.TextEditor, runAllAbove: boolean = false){
             }
         }
     }
+    if ((offsetCursor === selectEndOffset && offsetCursor < lineEndOffset) || selectStartOffset === selectEndOffset) {
+        let regexObj = new RegExp(regex, flags);
+        let result;
+        selectStartOffset = offsetCursor;
+        selectEndOffset = docText.length;
+        regexObj.lastIndex = selectStartOffset;
+        while ((result = regexObj.exec(docText)) !== null) {
+            if (result.index >= offsetCursor + 1) {
+                selectEndOffset = result.index;
+                lineAdjust = 1; // adjust the line by 1 to get rid of regex comment line
+                break;
+            }
+        }
+    } 
 
     let selectStart = editor.document.positionAt(selectStartOffset).line;
     let selectEnd = editor.document.positionAt(selectEndOffset).line - lineAdjust;
 
-    return [selectStart, selectEnd]
-};
+    return [selectStart, selectEnd];
+}
 
 async function createPythonTerminal() {
     // create python terminal if it doesn't exist
     if (pythonTerminal === null) {
-        const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL')
+        const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL');
         const pythonCommand = config.get("pythonRunCommand", "");
         const terminalCommand = config.get("customTerminalCommand", "");
         const envCommand = config.get("environmentActivationCommand", "");
@@ -109,10 +111,10 @@ async function createPythonTerminal() {
         if (envCommand && isString(envCommand)){
             pythonTerminal.sendText(envCommand);
         }
-        await delay(config.get("terminalInitTimeout", 1000))
+        await delay(config.get("terminalInitTimeout", 1000));
 
         pythonTerminal.sendText(pythonCommand);
-        await delay(config.get("pythonCommandTimeout", 300))
+        await delay(config.get("pythonCommandTimeout", 300));
     }
 }
 
@@ -125,13 +127,13 @@ function removePythonTerminal() {
 
 function updateFilename(filename: string, runInCurrentDirectory: boolean) {
     currentFilename = filename;
-    sendQueuedText(`__file__ = r'${filename}'`)
-    sendQueuedText('import sys')
-    sendQueuedText('import os')
+    sendQueuedText(`__file__ = r'${filename}'`);
+    sendQueuedText('import sys');
+    sendQueuedText('import os');
     if (runInCurrentDirectory) {
-        sendQueuedText(`os.chdir(os.path.dirname(r'${filename}'))`)
+        sendQueuedText(`os.chdir(os.path.dirname(r'${filename}'))`);
     }
-    sendQueuedText('sys.path.append(os.path.dirname(__file__))', 100)
+    sendQueuedText('sys.path.append(os.path.dirname(__file__))', 100);
 }
 
 function sendQueuedText(text: string, waitTime = 10) {
@@ -141,7 +143,7 @@ function sendQueuedText(text: string, waitTime = 10) {
 
 function queueLoop() {
     const config = vscode.workspace.getConfiguration("pythonREPL");
-    const direct_send = config.get('sendTextDirectly');
+    const directSend = config.get('sendTextDirectly');
     if (textQueue.length > 0 && pythonTerminal !== null) {
         isrunning = true;
         const text = textQueue.shift();
@@ -154,10 +156,10 @@ function queueLoop() {
                 isrunning = false;
             };
         } else {
-            if (!direct_send){
+            if (!directSend){
                 pythonTerminal.sendText('\n', false);
             }
-            return
+            return;
         };
         setTimeout(queueLoop, 100);
     }
@@ -175,41 +177,42 @@ function activate(context: vscode.ExtensionContext) {
         }
     });
     function activatePython () {
-        createPythonTerminal()
+        createPythonTerminal();
         vscode.window.showInformationMessage("Python REPL activated");
     };
         
-    function sendLines(startLine: number, endLine: number, check_cwd=false) {
-        const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL')
-        const direct_send = config.get('sendTextDirectly');
+    function sendLines(startLine: number, endLine: number, checkCwd=false) {
+        const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL');
+        const directSend = config.get('sendTextDirectly');
         const editor = vscode.window.activeTextEditor;
+
         if (editor){
             const filename = editor.document.fileName;
             let command;
 
             // set pwd to editor file path
-            if (filename !== currentFilename && check_cwd) {
+            if (filename !== currentFilename && checkCwd) {
                 updateFilename(filename, config.get('runInCurrentDirectory', true));
             }
 
-            if (direct_send) {
+            if (directSend) {
                 let docText = editor.document.getText();
-                let start_range = editor.document.offsetAt(editor.document.lineAt(startLine).range.start);
-                let end_range = editor.document.offsetAt(editor.document.lineAt(endLine).range.end);
+                let startRange = editor.document.offsetAt(editor.document.lineAt(startLine).range.start);
+                let endRange = editor.document.offsetAt(editor.document.lineAt(endLine).range.end);
                 function removeLeadingIndent(command: string) {
                     const strings = command.split('\n');
                     const filterStrings = strings.filter(item => item.search(/\S/) > -1);
                     const indents = filterStrings.map(item => item.search(/\S/));
-                    const minIndent = Math.min(...indents)
+                    const minIndent = Math.min(...indents);
 
                     if (minIndent > 0){
                         return filterStrings.map(item => item.slice(minIndent)).join('\n');
                     }
                     else {
-                        return command
+                        return command;
                     }
                 }
-                command = removeLeadingIndent(docText.substring(start_range, end_range));
+                command = removeLeadingIndent(docText.substring(startRange, endRange));
             } else {
                 command = `\n%load -r ${startLine + 1}-${endLine + 1} ${filename}\n`;
             }
@@ -226,7 +229,7 @@ function activate(context: vscode.ExtensionContext) {
     async function sendFileContents() {
         await createPythonTerminal();
         const editor = vscode.window.activeTextEditor;
-        const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL')
+        const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL');
         if (editor){
             const filename = editor.document.fileName;
 
@@ -250,13 +253,26 @@ function activate(context: vscode.ExtensionContext) {
     };
 
     async function sendSelected () {
-        await createPythonTerminal();
         const editor = vscode.window.activeTextEditor;
         if (editor) {
+            const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL');
+            const globalConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration();
+
             const selectStart = editor.document.offsetAt(editor.selection.start);
             const selectEnd = editor.document.offsetAt(editor.selection.end);
             const sL = editor.document.positionAt(selectStart).line;
             const eL = editor.document.positionAt(selectEnd).line;
+
+            if (config.get('removeSelectionAfterSend', true)) {
+                if (globalConfig.hasOwnProperty('vim')) {
+                    vscode.commands.executeCommand('extension.vim_ctrl+[');
+                }
+                else {
+                    vscode.commands.executeCommand('editor.action.cancelSelectionAnchor');
+                }
+            }
+
+            await createPythonTerminal();
 
             sendLines(sL, eL, true);
         }

@@ -1,11 +1,11 @@
 {
-    "name": "pythonREPL",
+    "name": "pythonrepl",
     "displayName": "Python REPL",
     "description": "Enables Convenient Python REPL Commands - open Python terminal and send selected codes, cells and files.",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "publisher": "astrapios",
     "engines": {
-        "vscode": "^1.70.0"
+        "vscode": "^1.65.0"
     },
     "categories": [
         "Other"
