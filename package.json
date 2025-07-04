@@ -14,14 +14,7 @@
         "type": "git",
         "url": "https://github.com/Astrapios/vscode_python_repl.git"
     },
-    "activationEvents": [
-        "onCommand:pythonREPL.activatePython",
-        "onCommand:pythonREPL.sendSelected",
-        "onCommand:pythonREPL.sendFileContents",
-        "onCommand:pythonREPL.sendCell",
-        "onCommand:pythonREPL.sendCellAndMove",
-        "onCommand:pythonREPL.sendAllAbove"
-    ],
+
     "main": "./out/extension.js",
     "contributes": {
         "commands": [
@@ -59,6 +52,11 @@
                     "default": true,
                     "description": "Enable/Disable Run in the same directory as the file"
                 },
+                "pythonREPL.saveBeforeSend": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Save the document before sending"
+                },
                 "pythonREPL.sendTextDirectly": {
                     "type": "boolean",
                     "default": false,
@@ -75,7 +73,7 @@
                 },
                 "pythonREPL.environmentActivationCommand": {
                     "type": "string",
-                    "description": "Custom envrionment activation command"
+                    "description": "Custom environment activation command (if not set, will auto-detect conda/virtual environments from VS Code Python interpreter)"
                 },
                 "pythonREPL.pythonRunCommand": {
                     "type": "string",
