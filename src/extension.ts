@@ -16,7 +16,7 @@ let isrunning: boolean = false;
 /**
  * @param {import("vscode").TextEditor} editor
  */
-function processRegEx(editor: vscode.TextEditor, runAllAbove: boolean = false){
+function processRegEx(editor: vscode.TextEditor, runAllAbove: boolean = false) {
     const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL.cell');
     const regex = config.get("blockSymbol", "#.*%%.*");
     if (config.get("debugNotify", false)) {
@@ -37,7 +37,7 @@ function processRegEx(editor: vscode.TextEditor, runAllAbove: boolean = false){
     if (runAllAbove) {
         selectStartOffset = 0;
         selectEndOffset = offsetCursor;
-    } 
+    }
     // case for cursor at the beginning block symbol. In this case, if not at the last line of the script,
     // cell below the cursor is executed
     else {
@@ -65,7 +65,7 @@ function processRegEx(editor: vscode.TextEditor, runAllAbove: boolean = false){
             }
         }
     }
-    if ((offsetCursor === selectEndOffset && offsetCursor < lineEndOffset) || selectStartOffset === selectEndOffset) {
+    if (!runAllAbove && ((offsetCursor === selectEndOffset && offsetCursor < lineEndOffset) || selectStartOffset === selectEndOffset)) {
         let regexObj = new RegExp(regex, flags);
         let result;
         selectStartOffset = offsetCursor;
@@ -78,7 +78,7 @@ function processRegEx(editor: vscode.TextEditor, runAllAbove: boolean = false){
                 break;
             }
         }
-    } 
+    }
 
     let selectStart = editor.document.positionAt(selectStartOffset).line;
     let selectEnd = editor.document.positionAt(selectEndOffset).line - lineAdjust;
@@ -86,13 +86,67 @@ function processRegEx(editor: vscode.TextEditor, runAllAbove: boolean = false){
     return [selectStart, selectEnd];
 }
 
+async function getCurrentPythonInterpreter(): Promise<string | undefined> {
+    try {
+        // Try to get the current Python interpreter from VS Code's Python extension
+        const pythonExtension = vscode.extensions.getExtension('ms-python.python');
+        if (pythonExtension && pythonExtension.isActive) {
+            const pythonApi = pythonExtension.exports;
+            const interpreter = await pythonApi.environments.getActiveEnvironmentPath();
+
+            if (interpreter && interpreter.path) {
+                return interpreter.path;
+            }
+        }
+    } catch (error) {
+        // Silently fail if Python extension is not available
+    }
+    return undefined;
+}
+
+async function detectAndActivateEnvironment(): Promise<string> {
+    let returnValue = "";
+    // Try to get the current Python interpreter from VS Code's Python extension
+    const interpreterPath = await getCurrentPythonInterpreter();
+    if (interpreterPath) {
+        // Check if this is a conda environment
+        if (interpreterPath.includes('conda') || interpreterPath.includes('envs')) {
+            // Extract conda environment name from path
+            const pathParts = interpreterPath.split(/[\\\/]/);
+            const envIndex = pathParts.findIndex((part: string) => part === 'envs');
+            if (envIndex !== -1 && envIndex + 1 < pathParts.length) {
+                const envName = pathParts[envIndex + 1];
+                vscode.window.showInformationMessage(`Auto-detected conda environment: ${envName}`);
+                returnValue = `conda activate ${envName}`;
+            }
+
+            // Alternative conda path pattern (e.g., /opt/conda/envs/envname)
+            const condaMatch = interpreterPath.match(/conda[\\\/]envs[\\\/]([^\\\/]+)/);
+            if (condaMatch) {
+                const envName = condaMatch[1];
+                vscode.window.showInformationMessage(`Auto-detected conda environment: ${envName}`);
+                returnValue = `conda activate ${envName}`;
+            }
+        }
+
+        // Check if this is a virtual environment
+        if (interpreterPath.includes('venv') || interpreterPath.includes('virtualenv')) {
+            // Extract the virtual environment path and create activation command
+            const venvPath = interpreterPath.replace(/\/bin\/python.*$/, '');
+            vscode.window.showInformationMessage(`Using virtual environment: ${venvPath}`);
+            returnValue = `source "${venvPath}/bin/activate"`;
+        }
+    }
+
+    return returnValue;
+}
+
 async function createPythonTerminal() {
     // create python terminal if it doesn't exist
     if (pythonTerminal === null) {
         const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL');
-        const pythonCommand = config.get("pythonRunCommand", "");
         const terminalCommand = config.get("customTerminalCommand", "");
-        const envCommand = config.get("environmentActivationCommand", "");
+        const manualEnvCommand = config.get("customEnvironmentActivationCommand", "");
 
         textQueue = [];
         waitsQueue = [];
@@ -105,24 +159,61 @@ async function createPythonTerminal() {
         pythonTerminal = vscode.window.createTerminal(terminalOptions);
         pythonTerminal.show(true);  //defalt: true
 
-        if (terminalCommand && isString(terminalCommand)){
+        if (terminalCommand && isString(terminalCommand)) {
             pythonTerminal.sendText(terminalCommand);
         }
-        if (envCommand && isString(envCommand)){
-            pythonTerminal.sendText(envCommand);
-        }
-        await delay(config.get("terminalInitTimeout", 1000));
 
+        // Auto-detect and activate environment, or use manual command if provided
+        let envCommand = manualEnvCommand;
+        if (!envCommand || !isString(envCommand)) {
+            envCommand = await detectAndActivateEnvironment();
+        }
+
+        if (envCommand && isString(envCommand)) {
+            pythonTerminal.sendText(envCommand);
+            await delay(config.get("terminalInitTimeout", 100)); // Longer delay for environment activation
+        }
+
+        // Start Python after environment is activated
+        const pythonCommand = config.get("pythonRunCommand", "");
         pythonTerminal.sendText(pythonCommand);
-        await delay(config.get("pythonCommandTimeout", 300));
+        await delay(config.get("pythonCommandTimeout", 100));
     }
 }
 
-async function saveFileBeforeRun(editor) {
+async function saveFileBeforeSend(editor: vscode.TextEditor) {
     const config = vscode.workspace.getConfiguration('pythonREPL');
-    if (config.get("saveFileBeforeRun", true)) {
+    if (editor.document.isDirty && config.get("saveFileBeforeSend", true)) {
+        const originalFormatOnSave = vscode.workspace.getConfiguration('editor').get('formatOnSave');
+        const originalFormatOnPaste = vscode.workspace.getConfiguration('editor').get('formatOnPaste');
+        const originalPythonFormatOnSave = vscode.workspace.getConfiguration('editor', { languageId: 'python' }).get('formatOnSave');
+        const originalPythonFormatOnPaste = vscode.workspace.getConfiguration('editor', { languageId: 'python' }).get('formatOnPaste');
+        const originalCodeActionsOnSave = vscode.workspace.getConfiguration('editor').get('codeActionsOnSave');
+        const originalPythonCodeActionsOnSave = vscode.workspace.getConfiguration('editor', { languageId: 'python' }).get('codeActionsOnSave');
+        await vscode.workspace.getConfiguration('editor').update('formatOnSave', false, vscode.ConfigurationTarget.Workspace);
+        await vscode.workspace.getConfiguration('editor').update('formatOnPaste', false, vscode.ConfigurationTarget.Workspace);
+        await vscode.workspace.getConfiguration('editor', { languageId: 'python' }).update('formatOnSave', false, vscode.ConfigurationTarget.Workspace);
+        await vscode.workspace.getConfiguration('editor', { languageId: 'python' }).update('formatOnPaste', false, vscode.ConfigurationTarget.Workspace);
+        await vscode.workspace.getConfiguration('editor').update('codeActionsOnSave', [], vscode.ConfigurationTarget.Workspace);
+        await vscode.workspace.getConfiguration('editor', { languageId: 'python' }).update('codeActionsOnSave', [], vscode.ConfigurationTarget.Workspace);
         await editor.document.save();
+        await vscode.workspace.getConfiguration('editor').update('formatOnSave', originalFormatOnSave, vscode.ConfigurationTarget.Workspace);
+        await vscode.workspace.getConfiguration('editor').update('formatOnPaste', originalFormatOnPaste, vscode.ConfigurationTarget.Workspace);
+        await vscode.workspace.getConfiguration('editor', { languageId: 'python' }).update('formatOnSave', originalPythonFormatOnSave, vscode.ConfigurationTarget.Workspace);
+        await vscode.workspace.getConfiguration('editor', { languageId: 'python' }).update('formatOnPaste', originalPythonFormatOnPaste, vscode.ConfigurationTarget.Workspace);
+        await vscode.workspace.getConfiguration('editor').update('codeActionsOnSave', originalCodeActionsOnSave, vscode.ConfigurationTarget.Workspace);
+        await vscode.workspace.getConfiguration('editor', { languageId: 'python' }).update('codeActionsOnSave', originalPythonCodeActionsOnSave, vscode.ConfigurationTarget.Workspace);
     }
+}
+
+async function prepareForExecution(editor: vscode.TextEditor) {
+    if (editor) {
+        await createPythonTerminal();
+        await saveFileBeforeSend(editor);
+
+        return editor;
+    }
+    return null;
 }
 
 function removePythonTerminal() {
@@ -158,12 +249,12 @@ function queueLoop() {
         pythonTerminal.sendText(text);
         setTimeout(queueLoop, waitTime!);
     } else {
-        if (isrunning) {            
+        if (isrunning) {
             if (textQueue.length === 0 && pythonTerminal !== null) {
                 isrunning = false;
             };
         } else {
-            if (!directSend){
+            if (!directSend) {
                 pythonTerminal.sendText('\n', false);
             }
             return;
@@ -172,8 +263,6 @@ function queueLoop() {
     }
 }
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -183,18 +272,18 @@ function activate(context: vscode.ExtensionContext) {
             removePythonTerminal();
         }
     });
-    function activatePython () {
-        createPythonTerminal();
-        vscode.window.showInformationMessage("Python REPL activated");
+    function activatePython() {
+        createPythonTerminal().then(() => {
+            vscode.window.showInformationMessage("Python REPL activated - check terminal for environment details");
+        });
     };
-        
-    function sendLines(startLine: number, endLine: number, checkCwd=false) {
+
+    function sendLines(startLine: number, endLine: number, checkCwd = false) {
         const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL');
         const directSend = config.get('sendTextDirectly');
         const editor = vscode.window.activeTextEditor;
 
-        if (editor){
-            saveFileBeforeRun(editor);
+        if (editor) {
             const filename = editor.document.fileName;
             let command;
 
@@ -213,7 +302,7 @@ function activate(context: vscode.ExtensionContext) {
                     const indents = filterStrings.map(item => item.search(/\S/));
                     const minIndent = Math.min(...indents);
 
-                    if (minIndent > 0){
+                    if (minIndent > 0) {
                         return filterStrings.map(item => item.slice(minIndent)).join('\n');
                     }
                     else {
@@ -226,7 +315,7 @@ function activate(context: vscode.ExtensionContext) {
             }
 
             if (config.get("copyToClipboard", false)) {
-                vscode.env.clipboard.writeText(command).then((v)=>v, (v)=>null);
+                vscode.env.clipboard.writeText(command).then((v) => v, (v) => null);
             }
 
             sendQueuedText(command, 100);
@@ -235,11 +324,10 @@ function activate(context: vscode.ExtensionContext) {
     };
 
     async function sendFileContents() {
-        await createPythonTerminal();
         const editor = vscode.window.activeTextEditor;
-        const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL');
-        if (editor){
-            saveFileBeforeRun(editor);
+        if (editor) {
+            await prepareForExecution(editor);
+            const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL');
             const filename = editor.document.fileName;
 
             // set pwd to editor file path
@@ -247,25 +335,24 @@ function activate(context: vscode.ExtensionContext) {
                 updateFilename(filename, config.get('runInCurrentDirectory', true));
             }
 
-            sendQueuedText(`\n%load ${filename}\n`, 500);
+            sendQueuedText(`\n%load ${filename}\n`, 100);
             queueLoop();
         }
     };
 
-    async function sendCell () {
-        await createPythonTerminal();
+    async function sendCell() {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
-            saveFileBeforeRun(editor);
+            await prepareForExecution(editor);
             let [sL, eL] = processRegEx(editor);
             sendLines(sL, eL, true);
         }
     };
 
-    async function sendSelected () {
+    async function sendSelected() {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
-            saveFileBeforeRun(editor);
+            await prepareForExecution(editor);
             const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL');
             const globalConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration();
 
@@ -283,17 +370,14 @@ function activate(context: vscode.ExtensionContext) {
                 }
             }
 
-            await createPythonTerminal();
-
             sendLines(sL, eL, true);
         }
     };
 
-    async function sendCellAndMove () {
-        await createPythonTerminal();
+    async function sendCellAndMove() {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
-            saveFileBeforeRun(editor);
+            await prepareForExecution(editor);
             const docText = editor.document.getText();
             const [sL, eL] = processRegEx(editor);
 
@@ -301,21 +385,20 @@ function activate(context: vscode.ExtensionContext) {
 
             // move to next cell only if current cell is not the last cell
             let lineEnd = editor.document.positionAt(docText.length).line;
-            if (eL < lineEnd - 2){
-                const range = editor.document.lineAt(eL+2).range;
+            if (eL < lineEnd - 2) {
+                const range = editor.document.lineAt(eL + 2).range;
                 editor.selections = [new vscode.Selection(range.start, range.start)];
                 editor.revealRange(range);
             }
         }
     };
 
-    async function sendAllAbove () {
-        await createPythonTerminal();
+    async function sendAllAbove() {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
-            saveFileBeforeRun(editor);
+            await prepareForExecution(editor);
             const [sL, eL] = processRegEx(editor, true);
-            sendLines(sL, eL-1, true);
+            sendLines(sL, eL - 1, true);
         }
     };
 
