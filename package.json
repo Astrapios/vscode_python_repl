@@ -116,6 +116,11 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Show a notify message of the used search properties"
+                },
+                "pythonREPL.saveFileBeforeSend": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Save the document before send"
                 }
             }
         }

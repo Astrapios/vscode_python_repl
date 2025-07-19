@@ -118,6 +118,13 @@ async function createPythonTerminal() {
     }
 }
 
+async function saveFileBeforeRun(editor) {
+    const config = vscode.workspace.getConfiguration('pythonREPL');
+    if (config.get("saveFileBeforeRun", true)) {
+        await editor.document.save();
+    }
+}
+
 function removePythonTerminal() {
     pythonTerminal = null;
     currentFilename = "";
@@ -187,6 +194,7 @@ function activate(context: vscode.ExtensionContext) {
         const editor = vscode.window.activeTextEditor;
 
         if (editor){
+            saveFileBeforeRun(editor);
             const filename = editor.document.fileName;
             let command;
 
@@ -231,6 +239,7 @@ function activate(context: vscode.ExtensionContext) {
         const editor = vscode.window.activeTextEditor;
         const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL');
         if (editor){
+            saveFileBeforeRun(editor);
             const filename = editor.document.fileName;
 
             // set pwd to editor file path
@@ -247,6 +256,7 @@ function activate(context: vscode.ExtensionContext) {
         await createPythonTerminal();
         const editor = vscode.window.activeTextEditor;
         if (editor) {
+            saveFileBeforeRun(editor);
             let [sL, eL] = processRegEx(editor);
             sendLines(sL, eL, true);
         }
@@ -255,6 +265,7 @@ function activate(context: vscode.ExtensionContext) {
     async function sendSelected () {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
+            saveFileBeforeRun(editor);
             const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL');
             const globalConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration();
 
@@ -282,6 +293,7 @@ function activate(context: vscode.ExtensionContext) {
         await createPythonTerminal();
         const editor = vscode.window.activeTextEditor;
         if (editor) {
+            saveFileBeforeRun(editor);
             const docText = editor.document.getText();
             const [sL, eL] = processRegEx(editor);
 
@@ -301,6 +313,7 @@ function activate(context: vscode.ExtensionContext) {
         await createPythonTerminal();
         const editor = vscode.window.activeTextEditor;
         if (editor) {
+            saveFileBeforeRun(editor);
             const [sL, eL] = processRegEx(editor, true);
             sendLines(sL, eL-1, true);
         }
