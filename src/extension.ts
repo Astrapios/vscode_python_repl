@@ -183,7 +183,7 @@ async function createPythonTerminal() {
 
 async function saveFileBeforeSend(editor: vscode.TextEditor) {
     const config = vscode.workspace.getConfiguration('pythonREPL');
-    if (editor.document.isDirty && config.get("saveFileBeforeSend", true)) {
+    if (editor.document.isDirty && config.get("saveFileBeforeSend")) {
         const originalFormatOnSave = vscode.workspace.getConfiguration('editor').get('formatOnSave');
         const originalFormatOnPaste = vscode.workspace.getConfiguration('editor').get('formatOnPaste');
         const originalPythonFormatOnSave = vscode.workspace.getConfiguration('editor', { languageId: 'python' }).get('formatOnSave');
