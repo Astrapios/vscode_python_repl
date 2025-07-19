@@ -2,7 +2,7 @@
     "name": "pythonrepl",
     "displayName": "Python REPL",
     "description": "Enables Convenient Python REPL Commands - open Python terminal and send selected codes, cells and files.",
-    "version": "0.3.1",
+    "version": "0.4.0",
     "publisher": "astrapios",
     "engines": {
         "vscode": "^1.65.0"
@@ -72,7 +72,7 @@
                 },
                 "pythonREPL.pythonRunCommand": {
                     "type": "string",
-                    "default": "ipython --pylab",
+                    "default": "ipython --matplotlib",
                     "description": "Default Python REPL with options (full path accepted)"
                 },
                 "pythonREPL.terminalInitTimeout": {
