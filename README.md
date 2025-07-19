@@ -29,9 +29,9 @@ All Python REPL settings can be accessed from `Extension Settings` page.
 
 Example custom `settings.json`:
 ```json
-"pythonREPL.customTerminalCommand": "C:\\Users\\ryuj\\Miniconda3\\Scripts\\activate", //this is custom setup for setting correct environment on my machine
-"pythonREPL.environmentActivationCommand": "conda activate base", //set a custom environment
-"pythonREPL.pythonRunCommand": "ipython --pylab", //these are default values
+"pythonREPL.customTerminalCommand": "", //run a custom command on terminal creation
+"pythonREPL.customEnvironmentActivationCommand": "", //run a custom environment activation command
+"pythonREPL.pythonRunCommand": "ipython", //these are default values
 "pythonREPL.cell.blockSymbol": "#.*%%.*\r", //these are default values
 ```
 The `pythonREPL.customTerminalCommand` and `pythonREPL.environmentActivationCommand` is for an advanced user who wants to circumvent a bug on Windows using default Microsoft Python extension. When using `cmd.exe` as `terminal.integrated.shell.windows` along with `conda` Python envrionment, creation of new integrated terminal steals a cursor focus. Changing `"python.terminal.activateEnvironment": false`, fixes the focus problem but requires user to set the environment manually. The two options are for such cases but can be ignored if initial terminal focus is not bothersome.
