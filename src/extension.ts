@@ -146,7 +146,7 @@ async function createPythonTerminal() {
     if (pythonTerminal === null) {
         const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL');
         const terminalCommand = config.get("customTerminalCommand", "");
-        const manualEnvCommand = config.get("environmentActivationCommand", "");
+        const manualEnvCommand = config.get("customEnvironmentActivationCommand", "");
 
         textQueue = [];
         waitsQueue = [];
@@ -181,9 +181,9 @@ async function createPythonTerminal() {
     }
 }
 
-async function saveFileBeforeRun(editor: vscode.TextEditor) {
+async function saveFileBeforeSend(editor: vscode.TextEditor) {
     const config = vscode.workspace.getConfiguration('pythonREPL');
-    if (editor.document.isDirty && config.get("saveFileBeforeRun", true)) {
+    if (editor.document.isDirty && config.get("saveFileBeforeSend", true)) {
         await editor.document.save();
     }
 }
@@ -191,7 +191,7 @@ async function saveFileBeforeRun(editor: vscode.TextEditor) {
 async function prepareForExecution(editor: vscode.TextEditor) {
     if (editor) {
         await createPythonTerminal();
-        await saveFileBeforeRun(editor);
+        await saveFileBeforeSend(editor);
 
         return editor;
     }

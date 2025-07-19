@@ -52,11 +52,6 @@
                     "default": true,
                     "description": "Enable/Disable Run in the same directory as the file"
                 },
-                "pythonREPL.saveBeforeSend": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Save the document before sending"
-                },
                 "pythonREPL.sendTextDirectly": {
                     "type": "boolean",
                     "default": false,
@@ -71,7 +66,7 @@
                     "type": "string",
                     "description": "Custom commands to run when creating a new integrated terminal"
                 },
-                "pythonREPL.environmentActivationCommand": {
+                "pythonREPL.customEnvironmentActivationCommand": {
                     "type": "string",
                     "description": "Custom environment activation command (if not set, will auto-detect conda/virtual environments from VS Code Python interpreter)"
                 },
@@ -117,7 +112,7 @@
                 },
                 "pythonREPL.saveFileBeforeSend": {
                     "type": "boolean",
-                    "default": false,
+                    "default": true,
                     "description": "Save the document before send"
                 }
             }
