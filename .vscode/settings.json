@@ -1,4 +1,0 @@
-{
-    "pythonREPL.sendTextDirectly": true,
-    "pythonREPL.environmentActivationCommand": "conda activate research"
-}
