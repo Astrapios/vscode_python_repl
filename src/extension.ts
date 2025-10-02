@@ -190,19 +190,26 @@ async function saveFileBeforeSend(editor: vscode.TextEditor) {
         const originalPythonFormatOnPaste = vscode.workspace.getConfiguration('editor', { languageId: 'python' }).get('formatOnPaste');
         const originalCodeActionsOnSave = vscode.workspace.getConfiguration('editor').get('codeActionsOnSave');
         const originalPythonCodeActionsOnSave = vscode.workspace.getConfiguration('editor', { languageId: 'python' }).get('codeActionsOnSave');
-        await vscode.workspace.getConfiguration('editor').update('formatOnSave', false, vscode.ConfigurationTarget.Workspace);
-        await vscode.workspace.getConfiguration('editor').update('formatOnPaste', false, vscode.ConfigurationTarget.Workspace);
-        await vscode.workspace.getConfiguration('editor', { languageId: 'python' }).update('formatOnSave', false, vscode.ConfigurationTarget.Workspace);
-        await vscode.workspace.getConfiguration('editor', { languageId: 'python' }).update('formatOnPaste', false, vscode.ConfigurationTarget.Workspace);
-        await vscode.workspace.getConfiguration('editor').update('codeActionsOnSave', [], vscode.ConfigurationTarget.Workspace);
-        await vscode.workspace.getConfiguration('editor', { languageId: 'python' }).update('codeActionsOnSave', [], vscode.ConfigurationTarget.Workspace);
+
+        // Pass the editor's document URI to the configuration calls
+        const editorConfig = vscode.workspace.getConfiguration('editor', editor.document.uri);
+        const pythonEditorConfig = vscode.workspace.getConfiguration('editor', { languageId: 'python', uri: editor.document.uri });
+
+        await editorConfig.update('formatOnSave', false, vscode.ConfigurationTarget.WorkspaceFolder);
+        await editorConfig.update('formatOnPaste', false, vscode.ConfigurationTarget.WorkspaceFolder);
+        await pythonEditorConfig.update('formatOnSave', false, vscode.ConfigurationTarget.WorkspaceFolder);
+        await pythonEditorConfig.update('formatOnPaste', false, vscode.ConfigurationTarget.WorkspaceFolder);
+        await editorConfig.update('codeActionsOnSave', [], vscode.ConfigurationTarget.WorkspaceFolder);
+        await pythonEditorConfig.update('codeActionsOnSave', [], vscode.ConfigurationTarget.WorkspaceFolder);
+
         await editor.document.save();
-        await vscode.workspace.getConfiguration('editor').update('formatOnSave', originalFormatOnSave, vscode.ConfigurationTarget.Workspace);
-        await vscode.workspace.getConfiguration('editor').update('formatOnPaste', originalFormatOnPaste, vscode.ConfigurationTarget.Workspace);
-        await vscode.workspace.getConfiguration('editor', { languageId: 'python' }).update('formatOnSave', originalPythonFormatOnSave, vscode.ConfigurationTarget.Workspace);
-        await vscode.workspace.getConfiguration('editor', { languageId: 'python' }).update('formatOnPaste', originalPythonFormatOnPaste, vscode.ConfigurationTarget.Workspace);
-        await vscode.workspace.getConfiguration('editor').update('codeActionsOnSave', originalCodeActionsOnSave, vscode.ConfigurationTarget.Workspace);
-        await vscode.workspace.getConfiguration('editor', { languageId: 'python' }).update('codeActionsOnSave', originalPythonCodeActionsOnSave, vscode.ConfigurationTarget.Workspace);
+
+        await editorConfig.update('formatOnSave', originalFormatOnSave, vscode.ConfigurationTarget.WorkspaceFolder);
+        await editorConfig.update('formatOnPaste', originalFormatOnPaste, vscode.ConfigurationTarget.WorkspaceFolder);
+        await pythonEditorConfig.update('formatOnSave', originalPythonFormatOnSave, vscode.ConfigurationTarget.WorkspaceFolder);
+        await pythonEditorConfig.update('formatOnPaste', originalPythonFormatOnPaste, vscode.ConfigurationTarget.WorkspaceFolder);
+        await editorConfig.update('codeActionsOnSave', originalCodeActionsOnSave, vscode.ConfigurationTarget.WorkspaceFolder);
+        await pythonEditorConfig.update('codeActionsOnSave', originalPythonCodeActionsOnSave, vscode.ConfigurationTarget.WorkspaceFolder);
     }
 }
 
