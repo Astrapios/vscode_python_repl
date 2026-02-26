@@ -1,6 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const pythonTerminalName = 'Python REPL';
 
@@ -104,41 +106,52 @@ async function getCurrentPythonInterpreter(): Promise<string | undefined> {
     return undefined;
 }
 
-async function detectAndActivateEnvironment(): Promise<string> {
-    let returnValue = "";
+async function isCondaEnvironment(interpreterPath: string): Promise<string | null> {
+    // Extract the environment root directory
+    // Interpreter path typically looks like: /path/to/envs/myenv/bin/python
+    // We need to go up to the env root
+    let envPath = path.dirname(path.dirname(interpreterPath)); // Remove /bin/python
+
+    // Check if conda-meta exists (definitive conda indicator)
+    const condaMetaPath = path.join(envPath, 'conda-meta');
+    if (fs.existsSync(condaMetaPath)) {
+        // Extract environment name from path
+        const envName = path.basename(envPath);
+        return envName;
+    }
+
+    // Also check one level up for base conda environment
+    // Base env has structure like: /path/to/miniconda3/bin/python
+    const parentCondaMeta = path.join(path.dirname(envPath), 'conda-meta');
+    if (fs.existsSync(parentCondaMeta)) {
+        return 'base';
+    }
+
+    return null;
+}
+
+async function detectAndActivateEnvironment(): Promise<{envCommand: string, pythonPath: string}> {
+    let envCommand = "";
+    let pythonPath = "";
+
     // Try to get the current Python interpreter from VS Code's Python extension
     const interpreterPath = await getCurrentPythonInterpreter();
+
     if (interpreterPath) {
-        // Check if this is a conda environment
-        if (interpreterPath.includes('conda') || interpreterPath.includes('envs')) {
-            // Extract conda environment name from path
-            const pathParts = interpreterPath.split(/[\\\/]/);
-            const envIndex = pathParts.findIndex((part: string) => part === 'envs');
-            if (envIndex !== -1 && envIndex + 1 < pathParts.length) {
-                const envName = pathParts[envIndex + 1];
-                vscode.window.showInformationMessage(`Auto-detected conda environment: ${envName}`);
-                returnValue = `conda activate ${envName}`;
-            }
+        pythonPath = interpreterPath;
 
-            // Alternative conda path pattern (e.g., /opt/conda/envs/envname)
-            const condaMatch = interpreterPath.match(/conda[\\\/]envs[\\\/]([^\\\/]+)/);
-            if (condaMatch) {
-                const envName = condaMatch[1];
-                vscode.window.showInformationMessage(`Auto-detected conda environment: ${envName}`);
-                returnValue = `conda activate ${envName}`;
-            }
-        }
-
-        // Check if this is a virtual environment
-        if (interpreterPath.includes('venv') || interpreterPath.includes('virtualenv')) {
-            // Extract the virtual environment path and create activation command
-            const venvPath = interpreterPath.replace(/\/bin\/python.*$/, '');
-            vscode.window.showInformationMessage(`Using virtual environment: ${venvPath}`);
-            returnValue = `source "${venvPath}/bin/activate"`;
+        // Check if this is actually a conda environment by looking for conda-meta
+        const condaEnvName = await isCondaEnvironment(interpreterPath);
+        if (condaEnvName) {
+            vscode.window.showInformationMessage(`Auto-detected conda environment: ${condaEnvName}`);
+            envCommand = `conda activate ${condaEnvName}`;
+        } else {
+            // Not conda - use interpreter directly (works for pixi, poetry, uv, venv, etc.)
+            vscode.window.showInformationMessage(`Using Python interpreter: ${interpreterPath}`);
         }
     }
 
-    return returnValue;
+    return {envCommand, pythonPath};
 }
 
 async function createPythonTerminal() {
@@ -163,53 +176,40 @@ async function createPythonTerminal() {
             pythonTerminal.sendText(terminalCommand);
         }
 
-        // Auto-detect and activate environment, or use manual command if provided
+        // Auto-detect environment, or use manual command if provided
         let envCommand = manualEnvCommand;
+        let pythonPath = "";
+
         if (!envCommand || !isString(envCommand)) {
-            envCommand = await detectAndActivateEnvironment();
+            const detected = await detectAndActivateEnvironment();
+            envCommand = detected.envCommand;
+            pythonPath = detected.pythonPath;
         }
 
         if (envCommand && isString(envCommand)) {
             pythonTerminal.sendText(envCommand);
-            await delay(config.get("terminalInitTimeout", 100)); // Longer delay for environment activation
+            await delay(config.get("terminalInitTimeout", 1000)); // Longer delay for environment activation
         }
 
-        // Start Python after environment is activated
-        const pythonCommand = config.get("pythonRunCommand", "");
+        // Start Python - use full interpreter path if available, otherwise use configured command
+        let pythonCommand = config.get("pythonRunCommand", "ipython --matplotlib");
+
+        // If we have a specific interpreter path and it's not conda (which was activated),
+        // use the interpreter directly with ipython module
+        if (pythonPath && !envCommand) {
+            // Try to use the interpreter's ipython if available
+            pythonCommand = `"${pythonPath}" -m IPython --matplotlib`;
+        }
+
         pythonTerminal.sendText(pythonCommand);
-        await delay(config.get("pythonCommandTimeout", 100));
+        await delay(config.get("pythonInitTimeout", 300));
     }
 }
 
 async function saveFileBeforeSend(editor: vscode.TextEditor) {
     const config = vscode.workspace.getConfiguration('pythonREPL');
     if (editor.document.isDirty && config.get("saveFileBeforeSend")) {
-        const originalFormatOnSave = vscode.workspace.getConfiguration('editor').get('formatOnSave');
-        const originalFormatOnPaste = vscode.workspace.getConfiguration('editor').get('formatOnPaste');
-        const originalPythonFormatOnSave = vscode.workspace.getConfiguration('editor', { languageId: 'python' }).get('formatOnSave');
-        const originalPythonFormatOnPaste = vscode.workspace.getConfiguration('editor', { languageId: 'python' }).get('formatOnPaste');
-        const originalCodeActionsOnSave = vscode.workspace.getConfiguration('editor').get('codeActionsOnSave');
-        const originalPythonCodeActionsOnSave = vscode.workspace.getConfiguration('editor', { languageId: 'python' }).get('codeActionsOnSave');
-
-        // Pass the editor's document URI to the configuration calls
-        const editorConfig = vscode.workspace.getConfiguration('editor', editor.document.uri);
-        const pythonEditorConfig = vscode.workspace.getConfiguration('editor', { languageId: 'python', uri: editor.document.uri });
-
-        await editorConfig.update('formatOnSave', false, vscode.ConfigurationTarget.WorkspaceFolder);
-        await editorConfig.update('formatOnPaste', false, vscode.ConfigurationTarget.WorkspaceFolder);
-        await pythonEditorConfig.update('formatOnSave', false, vscode.ConfigurationTarget.WorkspaceFolder);
-        await pythonEditorConfig.update('formatOnPaste', false, vscode.ConfigurationTarget.WorkspaceFolder);
-        await editorConfig.update('codeActionsOnSave', [], vscode.ConfigurationTarget.WorkspaceFolder);
-        await pythonEditorConfig.update('codeActionsOnSave', [], vscode.ConfigurationTarget.WorkspaceFolder);
-
         await editor.document.save();
-
-        await editorConfig.update('formatOnSave', originalFormatOnSave, vscode.ConfigurationTarget.WorkspaceFolder);
-        await editorConfig.update('formatOnPaste', originalFormatOnPaste, vscode.ConfigurationTarget.WorkspaceFolder);
-        await pythonEditorConfig.update('formatOnSave', originalPythonFormatOnSave, vscode.ConfigurationTarget.WorkspaceFolder);
-        await pythonEditorConfig.update('formatOnPaste', originalPythonFormatOnPaste, vscode.ConfigurationTarget.WorkspaceFolder);
-        await editorConfig.update('codeActionsOnSave', originalCodeActionsOnSave, vscode.ConfigurationTarget.WorkspaceFolder);
-        await pythonEditorConfig.update('codeActionsOnSave', originalPythonCodeActionsOnSave, vscode.ConfigurationTarget.WorkspaceFolder);
     }
 }
 
