@@ -2,7 +2,7 @@
     "name": "pythonrepl",
     "displayName": "Python REPL",
     "description": "Enables Convenient Python REPL Commands - open Python terminal and send selected codes, cells and files.",
-    "version": "0.4.3",
+    "version": "0.4.4",
     "publisher": "astrapios",
     "license": "MIT",
     "engines": {
@@ -127,16 +127,16 @@
         "test": "node ./out/test/runTest.js"
     },
     "devDependencies": {
-        "@types/glob": "^7.2.0",
-        "@types/mocha": "^9.1.1",
+        "@types/glob": "^8.1.0",
+        "@types/mocha": "^10.0.0",
         "@types/node": "16.x",
-        "@types/vscode": "^1.65.0",
-        "@typescript-eslint/eslint-plugin": "^5.31.0",
-        "@typescript-eslint/parser": "^5.31.0",
-        "@vscode/test-electron": "^2.1.5",
-        "eslint": "^8.20.0",
-        "glob": "^8.0.3",
+        "@types/vscode": "^1.75.0",
+        "@typescript-eslint/eslint-plugin": "^5.62.0",
+        "@typescript-eslint/parser": "^5.62.0",
+        "@vscode/test-electron": "^2.5.2",
+        "eslint": "^8.57.0",
+        "glob": "^13.0.0",
         "mocha": "^10.8.2",
-        "typescript": "^4.7.4"
+        "typescript": "^4.9.5"
     }
 }

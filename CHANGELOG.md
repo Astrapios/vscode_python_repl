@@ -6,6 +6,18 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-02-26
+
+### Fixed
+- Updated development dependencies to resolve deprecation warnings and security vulnerabilities
+- Updated glob from 8.x to 13.x (resolves security vulnerabilities)
+- Updated @vscode/test-electron to 2.5.2 (resolves whatwg-encoding and prebuild-install deprecation warnings)
+- Updated @types packages to latest compatible versions
+- Fixed all npm audit security vulnerabilities
+
+### Changed
+- Updated mocha, eslint, typescript-eslint, and other dev dependencies to latest compatible versions
+
 ## [0.4.3] - 2026-02-26
 
 ### Fixed
