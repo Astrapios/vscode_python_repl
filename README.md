@@ -1,113 +1,213 @@
 # Python REPL
-Made by [Astrapios](https://github.com/astrapios)
 
-Inspired by [select-by](https://github.com/rioj7/select-by) and [vscode-ipython](https://github.com/pancho111203/vscode-ipython)
+A lightweight and responsive VS Code extension for interactive Python development using IPython REPL. Send code cells, selections, or entire files to an integrated terminal without the overhead of Jupyter kernels.
 
-This extension allows simple and responsive Python REPL (default: `ipython`) interface to send selected codes or codes within user defined cell (default: `'# %%'`). The extension resulted from frustration with heavy and sometimes unresponsive communication with Jupyter kernel used in default Python extension.
+Made by [Astrapios](https://github.com/astrapios) | Inspired by [select-by](https://github.com/rioj7/select-by) and [vscode-ipython](https://github.com/pancho111203/vscode-ipython)
+
+## Why Python REPL?
+
+This extension was created out of frustration with the heavy and sometimes unresponsive Jupyter kernel communication in VS Code's default Python extension. Python REPL provides:
+
+- **Faster startup**: No kernel to initialize, just an IPython REPL in the terminal
+- **Lower resource usage**: Terminal-based execution is lightweight
+- **Better reliability**: Direct terminal communication is more stable
+- **Full IPython features**: Access to all IPython magic commands and features
+- **Transparency**: See exactly what's being executed in the terminal
+
+## Requirements
+
+- Python 3.x installed
+- IPython recommended (install with `pip install ipython`)
+- Optional: VS Code Vim extension for vim-mode keybindings
+
+## Features
+
+- **Cell-based execution**: Define code cells with `# %%` delimiters (Jupyter-style)
+- **Flexible code sending**: Execute selections, cells, entire files, or everything above cursor
+- **Cell navigation**: Jump between cells without executing them
+- **Auto environment detection**: Automatically detects and activates conda environments, works seamlessly with pixi, poetry, uv, and venv
+- **Lightweight**: Uses integrated terminal with IPython instead of Jupyter kernel
+- **Vim-friendly**: Suggested keybindings compatible with vim mode
 
 ## Available Commands
-Python REPL: Activate/Initialize Python REPL ( `pythonREPL.activatePython` )
-- Initialize Python REPL. Python REPL should be automatically initialized from other commands if it does not already exist
 
-Python REPL: Send File Contents ( `pythonREPL.sendFileContents` )
-- Send and run full file contents in Python REPL 
+### Execution Commands
 
-Python REPL: Send Selected Text (or current line) ( `pythonREPL.sendSelected` )
-- Send and run selected code in Python REPL 
+- **Python REPL: Activate/Initialize Python** (`pythonREPL.activatePython`)
+  - Initialize Python REPL (automatically initialized by other commands if needed)
 
-Python REPL: Send Cell ( `pythonREPL.sendCell` )
-- Send and run current Python cell in Python REPL. Cursor position is unmodified.
+- **Python REPL: Send File Contents** (`pythonREPL.sendFileContents`)
+  - Send and run entire file in Python REPL
 
-Python REPL: Send Cell and Move to Next Cell ( `pythonREPL.sendCellAndMove` )
-- Send and run current Python cell in Python REPL. Then, the cursor is moved to the next cell.
+- **Python REPL: Send Selected Text** (`pythonREPL.sendSelected`)
+  - Send and run selected code (or current line if no selection)
 
-Python REPL: Send Everything Above Current Cell ( `pythonREPL.sendAllAbove` )
-- Send and run everything above current cell in Python REPL
+- **Python REPL: Send Cell** (`pythonREPL.sendCell`)
+  - Send and run current cell, cursor stays in place
 
-## Setup Guide
-All Python REPL settings can be accessed from `Extension Settings` page.
+- **Python REPL: Send Cell and Move** (`pythonREPL.sendCellAndMove`)
+  - Send and run current cell, then move cursor to next cell
 
-Example custom `settings.json`:
+- **Python REPL: Send Everything Above** (`pythonREPL.sendAllAbove`)
+  - Send and run all code above current cursor position
+
+### Navigation Commands
+
+- **Python REPL: Go to Next Cell** (`pythonREPL.goToNextCell`)
+  - Navigate to the next code cell
+
+- **Python REPL: Go to Previous Cell** (`pythonREPL.goToPreviousCell`)
+  - Navigate to the previous code cell
+
+- **Python REPL: Go to Cell Start** (`pythonREPL.goToCellStart`)
+  - Jump to the beginning of current cell
+
+- **Python REPL: Go to Cell End** (`pythonREPL.goToCellEnd`)
+  - Jump to the end of current cell
+
+## Configuration
+
+All settings can be accessed from VS Code's Extension Settings page or configured in `settings.json`.
+
+### Key Settings
+
 ```json
-"pythonREPL.customTerminalCommand": "", //run a custom command on terminal creation
-"pythonREPL.customEnvironmentActivationCommand": "", //run a custom environment activation command
-"pythonREPL.pythonRunCommand": "ipython", //these are default values
-"pythonREPL.cell.blockSymbol": "#.*%%.*\r", //these are default values
-```
-The `pythonREPL.customTerminalCommand` and `pythonREPL.environmentActivationCommand` is for an advanced user who wants to circumvent a bug on Windows using default Microsoft Python extension. When using `cmd.exe` as `terminal.integrated.shell.windows` along with `conda` Python envrionment, creation of new integrated terminal steals a cursor focus. Changing `"python.terminal.activateEnvironment": false`, fixes the focus problem but requires user to set the environment manually. The two options are for such cases but can be ignored if initial terminal focus is not bothersome.
-
-Directly sending code to terminal has issues in OS X, where instead of entire code block being sent as a whole, each line separated by new line or carriage return are executed sequencially. To circumvent this issue, `pythonREPL.sendTextDirectly` set to `false` as a default. This utilizes `%load -r` *Ipython* magic command, which allows user to send specific lines of from a *Python* script. For responsiveness, this requires users to save the script before sending code blocks. For Windows users, this option should be turned on in the settings.
-
-Example custom `keybindings.json`:
-```json
-"keybindings": [
-    {   //activate Python REPL without sending any code
-        //this command is not needed. All other command automatically
-        //activates Python REPL if it does not exist
-        "key": "ctrl+c ctrl+p",
-        "command": "pythonREPL.activatePython"
-    },
-
-    {   //send current cell and leave cursor where it is
-        "key": "ctrl+enter",
-        "command": "pythonREPL.sendCell",
-        "when": "editorLangId == python"
-    },
-
-    {   //send all cells above current cell
-        "key": "ctrl+c ctrl+enter",
-        "command": "pythonREPL.sendAllAbove",
-        "when": "editorLangId == python"
-    },
-
-    {   //send cell and move to next cell when in vim Normal mode
-        "key": "shift+enter",
-        "command": "pythonREPL.sendCellAndMove",
-        "when": "editorLangId == python && vim.mode == 'Normal'"
-    },
-
-    {   //send only what is selected when in vim Visual Mode
-        "key": "shift+enter",
-        "command": "pythonREPL.sendSelected",
-        "when": "vim.mode != 'Normal' && vim.mode != 'Insert"
-    },
-
-    {   // send all file contents
-        "key": "f5",
-        "command": "pythonREPL.sendFileContents",
-        "when": "editorLangId == python"
-    },
-
-    {   // navigate to next cell (vim-style)
-        "key": "] c",
-        "command": "pythonREPL.goToNextCell",
-        "when": "editorLangId == python && vim.mode == 'Normal'"
-    },
-
-    {   // navigate to previous cell (vim-style)
-        "key": "[ c",
-        "command": "pythonREPL.goToPreviousCell",
-        "when": "editorLangId == python && vim.mode == 'Normal'"
-    },
-
-    {   // go to cell start (vim paragraph motion)
-        "key": "{ {",
-        "command": "pythonREPL.goToCellStart",
-        "when": "editorLangId == python && vim.mode == 'Normal'"
-    },
-
-    {   // go to cell end (vim paragraph motion)
-        "key": "} }",
-        "command": "pythonREPL.goToCellEnd",
-        "when": "editorLangId == python && vim.mode == 'Normal'"
-    }
-]
+{
+  "pythonREPL.pythonRunCommand": "ipython --matplotlib",
+  "pythonREPL.cell.blockSymbol": "#.*%%.*",
+  "pythonREPL.sendTextDirectly": false,
+  "pythonREPL.runInCurrentDirectory": true,
+  "pythonREPL.saveFileBeforeSend": true
+}
 ```
 
-**Navigation keybindings** (vim-compatible):
-- `]c` - Go to next cell
-- `[c` - Go to previous cell
-- `{{` - Go to start of current cell
-- `}}` - Go to end of current cell
+### Environment Detection
 
-These follow vim conventions where `]` and `[` are used for forward/backward navigation, similar to `]m` and `[m` for methods in many vim plugins.
+The extension automatically detects your Python environment:
+
+- **Conda environments**: Automatically runs `conda activate <env>` when detected
+- **Pixi, Poetry, uv, venv**: Uses the interpreter path directly without activation
+- **Manual override**: Use `pythonREPL.customEnvironmentActivationCommand` to specify custom activation
+
+### Platform-Specific Settings
+
+**macOS**: Keep `pythonREPL.sendTextDirectly` set to `false` (default). This uses IPython's `%load -r` magic command to send code, which is more reliable for multi-line code blocks on macOS. The file must be saved before sending code.
+
+**Windows**: You can set `pythonREPL.sendTextDirectly` to `true` for more responsive direct code sending.
+
+**Advanced Windows Setup**: If using `cmd.exe` with conda causes terminal focus issues, configure:
+```json
+{
+  "pythonREPL.customTerminalCommand": "",
+  "pythonREPL.customEnvironmentActivationCommand": "conda activate myenv"
+}
+```
+
+## Suggested Keybindings
+
+Add these to your `keybindings.json` (File → Preferences → Keyboard Shortcuts → Open Keyboard Shortcuts (JSON)):
+
+### Execution Keybindings
+
+```json
+{
+  "key": "ctrl+enter",
+  "command": "pythonREPL.sendCell",
+  "when": "editorLangId == python"
+},
+{
+  "key": "shift+enter",
+  "command": "pythonREPL.sendCellAndMove",
+  "when": "editorLangId == python && vim.mode == 'Normal'"
+},
+{
+  "key": "shift+enter",
+  "command": "pythonREPL.sendSelected",
+  "when": "editorLangId == python && vim.mode != 'Normal' && vim.mode != 'Insert'"
+},
+{
+  "key": "ctrl+shift+enter",
+  "command": "pythonREPL.sendAllAbove",
+  "when": "editorLangId == python"
+},
+{
+  "key": "f5",
+  "command": "pythonREPL.sendFileContents",
+  "when": "editorLangId == python"
+}
+```
+
+**Summary**:
+- `Ctrl+Enter` - Execute current cell
+- `Shift+Enter` - Execute cell and move to next (Normal mode) / Execute selection (Visual mode)
+- `Ctrl+Shift+Enter` - Execute all cells above cursor
+- `F5` - Execute entire file
+
+### Navigation Keybindings (Vim-Compatible)
+
+```json
+{
+  "key": "] ]",
+  "command": "pythonREPL.goToNextCell",
+  "when": "editorLangId == python && vim.mode == 'Normal'"
+},
+{
+  "key": "[ [",
+  "command": "pythonREPL.goToPreviousCell",
+  "when": "editorLangId == python && vim.mode == 'Normal'"
+},
+{
+  "key": "] s",
+  "command": "pythonREPL.goToCellStart",
+  "when": "editorLangId == python && vim.mode == 'Normal'"
+},
+{
+  "key": "] e",
+  "command": "pythonREPL.goToCellEnd",
+  "when": "editorLangId == python && vim.mode == 'Normal'"
+}
+```
+
+**Summary**:
+- `]]` - Go to next cell
+- `[[` - Go to previous cell
+- `]s` - Go to cell start
+- `]e` - Go to cell end
+
+These follow vim conventions where `]` and `[` are used for forward/backward navigation (similar to `]]`/`[[` for sections and `]m`/`[m` for methods).
+
+## Example Usage
+
+1. **Define cells** in your Python file using `# %%`:
+   ```python
+   # %% Cell 1
+   import numpy as np
+   x = np.arange(10)
+
+   # %% Cell 2
+   print(x.mean())
+   ```
+
+2. **Execute cells** with `Ctrl+Enter` or `Shift+Enter`
+
+3. **Navigate between cells** with `]c` and `[c` (vim mode)
+
+4. The extension automatically activates your Python environment and starts IPython in the integrated terminal
+
+## Troubleshooting
+
+**IPython not found**: Install IPython with `pip install ipython` or configure a different REPL with `pythonREPL.pythonRunCommand`.
+
+**Environment not activating**: Set `pythonREPL.customEnvironmentActivationCommand` manually or check that the VS Code Python extension is installed and has selected the correct interpreter.
+
+**Code not executing on macOS**: Ensure `pythonREPL.sendTextDirectly` is `false` (default) and `pythonREPL.saveFileBeforeSend` is `true`.
+
+**Terminal focus issues on Windows**: See the Advanced Windows Setup section in Configuration.
+
+## Contributing
+
+Issues and pull requests welcome at [github.com/Astrapios/vscode_python_repl](https://github.com/Astrapios/vscode_python_repl)
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details

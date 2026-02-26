@@ -6,6 +6,16 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-02-26
+
+### Changed
+- Improved README with better organization and clarity
+- Added "Why Python REPL?" section explaining benefits over Jupyter kernels
+- Added Requirements, Troubleshooting, and Contributing sections
+- Updated navigation keybinding suggestions to use more reliable vim-compatible bindings:
+  - `]]` and `[[` for next/previous cell (instead of `]c`/`[c`)
+  - `]s` and `]e` for cell start/end (instead of `{{`/`}}` which don't work reliably)
+
 ## [0.5.1] - 2026-02-26
 
 ### Fixed

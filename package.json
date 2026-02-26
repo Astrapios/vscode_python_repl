@@ -2,7 +2,7 @@
     "name": "pythonrepl",
     "displayName": "Python REPL",
     "description": "Enables Convenient Python REPL Commands - open Python terminal and send selected codes, cells and files.",
-    "version": "0.5.1",
+    "version": "0.5.2",
     "publisher": "astrapios",
     "license": "MIT",
     "engines": {
