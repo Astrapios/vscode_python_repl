@@ -112,6 +112,12 @@ async function isCondaEnvironment(interpreterPath: string): Promise<string | nul
     // We need to go up to the env root
     let envPath = path.dirname(path.dirname(interpreterPath)); // Remove /bin/python
 
+    // Exclude pixi environments - they also have conda-meta but shouldn't use conda activate
+    // Pixi paths contain .pixi directory (e.g., /path/to/project/.pixi/envs/default)
+    if (interpreterPath.includes('.pixi')) {
+        return null;
+    }
+
     // Check if conda-meta exists (definitive conda indicator)
     const condaMetaPath = path.join(envPath, 'conda-meta');
     if (fs.existsSync(condaMetaPath)) {

@@ -6,6 +6,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-02-26
+
+### Fixed
+- Fixed pixi environment detection - pixi environments were incorrectly identified as conda environments because both use conda-meta directory
+- Pixi environments now use the interpreter path directly instead of attempting conda activation
+
 ## [0.4.4] - 2026-02-26
 
 ### Fixed
