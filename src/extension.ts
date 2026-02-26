@@ -464,17 +464,28 @@ function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        const currentLine = editor.selection.active.line;
         const boundaries = findCellBoundaries(editor);
 
-        // Find the previous cell boundary before current line
-        // We need to find the boundary that starts the current cell or the one before
-        let previousBoundary: number | undefined;
+        // Get the start of the current cell using processRegEx
+        const [currentCellStart] = processRegEx(editor);
 
+        // Find the boundary that starts the current cell or the one right before cursor
+        let currentCellBoundary: number | undefined;
         for (let i = boundaries.length - 1; i >= 0; i--) {
-            if (boundaries[i] < currentLine) {
-                previousBoundary = boundaries[i];
+            if (boundaries[i] <= currentCellStart) {
+                currentCellBoundary = boundaries[i];
                 break;
+            }
+        }
+
+        // Find the previous cell boundary (the one before the current cell's boundary)
+        let previousBoundary: number | undefined;
+        if (currentCellBoundary !== undefined) {
+            for (let i = boundaries.length - 1; i >= 0; i--) {
+                if (boundaries[i] < currentCellBoundary) {
+                    previousBoundary = boundaries[i];
+                    break;
+                }
             }
         }
 
@@ -484,7 +495,7 @@ function activate(context: vscode.ExtensionContext) {
             const position = new vscode.Position(targetLine, 0);
             editor.selection = new vscode.Selection(position, position);
             editor.revealRange(new vscode.Range(position, position));
-        } else if (boundaries.length > 0) {
+        } else {
             // If no previous boundary found, go to the start of document (before first cell)
             const position = new vscode.Position(0, 0);
             editor.selection = new vscode.Selection(position, position);

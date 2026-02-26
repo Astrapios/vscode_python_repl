@@ -6,6 +6,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-02-26
+
+### Fixed
+- Fixed `goToPreviousCell` command not working when cursor is positioned right below a cell delimiter
+- Previous cell navigation now correctly uses current cell boundaries to find the actual previous cell
+
 ## [0.5.0] - 2026-02-26
 
 ### Added
