@@ -76,6 +76,38 @@ Example custom `keybindings.json`:
         "key": "f5",
         "command": "pythonREPL.sendFileContents",
         "when": "editorLangId == python"
+    },
+
+    {   // navigate to next cell (vim-style)
+        "key": "] c",
+        "command": "pythonREPL.goToNextCell",
+        "when": "editorLangId == python && vim.mode == 'Normal'"
+    },
+
+    {   // navigate to previous cell (vim-style)
+        "key": "[ c",
+        "command": "pythonREPL.goToPreviousCell",
+        "when": "editorLangId == python && vim.mode == 'Normal'"
+    },
+
+    {   // go to cell start (vim paragraph motion)
+        "key": "{ {",
+        "command": "pythonREPL.goToCellStart",
+        "when": "editorLangId == python && vim.mode == 'Normal'"
+    },
+
+    {   // go to cell end (vim paragraph motion)
+        "key": "} }",
+        "command": "pythonREPL.goToCellEnd",
+        "when": "editorLangId == python && vim.mode == 'Normal'"
     }
 ]
 ```
+
+**Navigation keybindings** (vim-compatible):
+- `]c` - Go to next cell
+- `[c` - Go to previous cell
+- `{{` - Go to start of current cell
+- `}}` - Go to end of current cell
+
+These follow vim conventions where `]` and `[` are used for forward/backward navigation, similar to `]m` and `[m` for methods in many vim plugins.

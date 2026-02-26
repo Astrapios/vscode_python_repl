@@ -6,6 +6,18 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-02-26
+
+### Added
+- Cell navigation commands for moving through code blocks without executing them:
+  - `pythonREPL.goToNextCell` - Navigate to the next cell
+  - `pythonREPL.goToPreviousCell` - Navigate to the previous cell
+  - `pythonREPL.goToCellStart` - Jump to the start of the current cell
+  - `pythonREPL.goToCellEnd` - Jump to the end of the current cell
+- Vim-compatible keybinding suggestions in README:
+  - `]c` for next cell, `[c` for previous cell
+  - `{{` for cell start, `}}` for cell end
+
 ## [0.4.5] - 2026-02-26
 
 ### Fixed

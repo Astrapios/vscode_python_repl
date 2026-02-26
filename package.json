@@ -2,7 +2,7 @@
     "name": "pythonrepl",
     "displayName": "Python REPL",
     "description": "Enables Convenient Python REPL Commands - open Python terminal and send selected codes, cells and files.",
-    "version": "0.4.5",
+    "version": "0.5.0",
     "publisher": "astrapios",
     "license": "MIT",
     "engines": {
@@ -41,6 +41,22 @@
             {
                 "command": "pythonREPL.sendAllAbove",
                 "title": "Python REPL: Send Everything Above Current Cell"
+            },
+            {
+                "command": "pythonREPL.goToNextCell",
+                "title": "Python REPL: Go to Next Cell"
+            },
+            {
+                "command": "pythonREPL.goToPreviousCell",
+                "title": "Python REPL: Go to Previous Cell"
+            },
+            {
+                "command": "pythonREPL.goToCellStart",
+                "title": "Python REPL: Go to Cell Start"
+            },
+            {
+                "command": "pythonREPL.goToCellEnd",
+                "title": "Python REPL: Go to Cell End"
             }
         ],
         "configuration": {

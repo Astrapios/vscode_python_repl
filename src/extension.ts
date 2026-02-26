@@ -277,6 +277,28 @@ function queueLoop() {
 }
 
 /**
+ * Find all cell boundaries in the document
+ * Returns array of line numbers where cells start (cell delimiter lines)
+ */
+function findCellBoundaries(editor: vscode.TextEditor): number[] {
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('pythonREPL.cell');
+    const regex = config.get("blockSymbol", "#.*%%.*");
+    const flags = config.get("regexFlags", "") + "g";
+    const docText = editor.document.getText();
+
+    const boundaries: number[] = [];
+    const regexObj = new RegExp(regex, flags);
+    let result;
+
+    while ((result = regexObj.exec(docText)) !== null) {
+        const line = editor.document.positionAt(result.index).line;
+        boundaries.push(line);
+    }
+
+    return boundaries;
+}
+
+/**
  * @param {vscode.ExtensionContext} context
  */
 function activate(context: vscode.ExtensionContext) {
@@ -415,12 +437,98 @@ function activate(context: vscode.ExtensionContext) {
         }
     };
 
+    function goToNextCell() {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            return;
+        }
+
+        const currentLine = editor.selection.active.line;
+        const boundaries = findCellBoundaries(editor);
+
+        // Find the next cell boundary after current line
+        const nextBoundary = boundaries.find(line => line > currentLine);
+
+        if (nextBoundary !== undefined) {
+            // Move to the line after the cell delimiter
+            const targetLine = Math.min(nextBoundary + 1, editor.document.lineCount - 1);
+            const position = new vscode.Position(targetLine, 0);
+            editor.selection = new vscode.Selection(position, position);
+            editor.revealRange(new vscode.Range(position, position));
+        }
+    }
+
+    function goToPreviousCell() {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            return;
+        }
+
+        const currentLine = editor.selection.active.line;
+        const boundaries = findCellBoundaries(editor);
+
+        // Find the previous cell boundary before current line
+        // We need to find the boundary that starts the current cell or the one before
+        let previousBoundary: number | undefined;
+
+        for (let i = boundaries.length - 1; i >= 0; i--) {
+            if (boundaries[i] < currentLine) {
+                previousBoundary = boundaries[i];
+                break;
+            }
+        }
+
+        if (previousBoundary !== undefined) {
+            // Move to the line after the cell delimiter
+            const targetLine = Math.min(previousBoundary + 1, editor.document.lineCount - 1);
+            const position = new vscode.Position(targetLine, 0);
+            editor.selection = new vscode.Selection(position, position);
+            editor.revealRange(new vscode.Range(position, position));
+        } else if (boundaries.length > 0) {
+            // If no previous boundary found, go to the start of document (before first cell)
+            const position = new vscode.Position(0, 0);
+            editor.selection = new vscode.Selection(position, position);
+            editor.revealRange(new vscode.Range(position, position));
+        }
+    }
+
+    function goToCellStart() {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            return;
+        }
+
+        const [sL] = processRegEx(editor);
+        const position = new vscode.Position(sL, 0);
+        editor.selection = new vscode.Selection(position, position);
+        editor.revealRange(new vscode.Range(position, position));
+    }
+
+    function goToCellEnd() {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            return;
+        }
+
+        const [, eL] = processRegEx(editor);
+        const lineCount = editor.document.lineCount;
+        const targetLine = Math.min(eL, lineCount - 1);
+        const line = editor.document.lineAt(targetLine);
+        const position = new vscode.Position(targetLine, line.text.length);
+        editor.selection = new vscode.Selection(position, position);
+        editor.revealRange(new vscode.Range(position, position));
+    }
+
     context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.activatePython', activatePython));
     context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.sendCell', sendCell));
     context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.sendCellAndMove', sendCellAndMove));
     context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.sendAllAbove', sendAllAbove));
     context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.sendSelected', sendSelected));
     context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.sendFileContents', sendFileContents));
+    context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.goToNextCell', goToNextCell));
+    context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.goToPreviousCell', goToPreviousCell));
+    context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.goToCellStart', goToCellStart));
+    context.subscriptions.push(vscode.commands.registerCommand('pythonREPL.goToCellEnd', goToCellEnd));
 }
 
 exports.activate = activate;
