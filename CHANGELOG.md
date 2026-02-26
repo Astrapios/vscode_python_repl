@@ -6,6 +6,15 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-02-26
+
+### Fixed
+- Reduced extension package size by excluding unnecessary files (source files, node_modules, tests, build artifacts) in .vscodeignore
+- Removed unused "timers" dependency that was never imported in the code
+
+### Changed
+- Extension now packages only compiled JavaScript files from /out directory, significantly reducing file count from 1034 to minimal set
+
 ## [0.4.2] - 2026-02-26
 
 ### Fixed
